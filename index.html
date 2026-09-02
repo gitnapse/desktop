@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitNapse Desktop</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>GitNapse Desktop</h1>
+      <span id="auth-status" class="chip"></span>
+    </header>
+
+    <main>
+      <div id="mode" class="banner"></div>
+      <section class="card">
+        <h2>Clone a repository</h2>
+        <label>
+          Repository
+          <input
+            id="repo"
+            type="text"
+            placeholder="owner/name or https://github.com/owner/name.git"
+            spellcheck="false"
+          />
+        </label>
+        <label>
+          Destination folder
+          <div class="row">
+            <input id="dest" type="text" spellcheck="false" />
+            <button id="pick" type="button">Choose</button>
+          </div>
+        </label>
+        <div class="row">
+          <button id="clone" type="button" class="primary">Clone</button>
+          <button id="save-dir" type="button">Save as default</button>
+        </div>
+        <pre id="output"></pre>
+        <div id="actions" class="row actions">
+          <button id="open-folder" type="button">Open folder</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>
+          GitHub
+          <span id="api-status" class="chip"></span>
+          <button id="check-api" type="button" class="mini">Check</button>
+        </h2>
+        <label>
+          Search repositories (via the GitNapse API)
+          <div class="row">
+            <input id="gh-query" type="text" placeholder="gitnapse" spellcheck="false" />
+            <button id="gh-search" type="button">Search</button>
+          </div>
+        </label>
+        <ul id="gh-results" class="results"></ul>
+        <p id="gh-hint" class="hint"></p>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
