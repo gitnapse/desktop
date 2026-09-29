@@ -1,181 +1,138 @@
 # GitNapse Desktop — Roadmap
 
-> App-specific roadmap for the GitNapse desktop interface. The ecosystem map
-> (repo boundaries, single-owner capability table, phases F0-F5) lives in
-> `ROADMAP.md` at the workspace root; this document details the desktop track.
+> App-specific roadmap for `desktop/`. The ecosystem map — repo boundaries,
+> dependency direction, the frozen command contract and phases F0-F5 — lives
+> in [`../WORKSPACE.md`](../WORKSPACE.md); this document details the desktop
+> track. Status: redesign implemented; sidecar packaging, visual QA and P1 UI
+> wiring open.
 
 ## 1. Vision
 
-GitNapse Desktop is the **graphical front** of the GitNapse ecosystem: the
-"outside the terminal" experience that mirrors everything the CLI/TUI can do,
-without duplicating a single line of logic. A user who downloads and installs
-the app gets a complete Git-over-GitHub workflow:
+GitNapse Desktop is the graphical, non-TUI face of the GitNapse ecosystem: a
+GitHub dashboard built on the same core SDK and wire protocol as the CLI/TUI,
+without duplicating logic.
 
-- Browse GitHub: search, repository explorer, file previews, PRs, issues,
-  releases.
-- Work locally: clone into a configured folder, status/log/branches,
-  commit/push/pull.
-- Manage the session: token onboarding and token lifecycle from the UI.
+- **Dashboard home**: activity, stats, shortcuts and session state.
+- **Global search**: repositories, users and code.
+- **Repo explorer**: overview, code, commits, branches, compare, issues, pull
+  requests, actions and releases.
+- **Local repo panel**: clone, status/diff, commit/sync, branches, stash, tags
+  and remotes.
+- **Profile and session**: user profile, settings, OAuth device-flow onboarding
+  and token lifecycle.
 
-It must be **ultra fast** (near-instant startup, tiny footprint) and
-**multi-platform** (Windows, macOS, Linux) with a strict
-`shared/` + `platforms/<os>/` separation.
+The interface follows the workspace design doctrine (`WORKSPACE.md` §6,
+xglassmorphism × samurai): five-layer glass with a token contract and
+opaque/contrast/reduced-transparency fallbacks, monochrome canvas where color
+is an event, inline feedback instead of toasts or skeletons. Targets: Windows,
+macOS and Linux.
 
-## 2. Architecture principles
+## 2. Architecture (as built)
 
-1. **The UI is a thin shell.** Every capability is owned elsewhere:
-   - Git local + config: the `gitnapse` core SDK, in-process (headless build,
-     TUI disabled), linked by `path`.
-   - GitHub data: the GitNapse HTTP API (`gitnapse-server` + typed
-     `gitnapse-client`), never the GitHub REST API directly.
-2. **Hybrid by capability, not by mood.** GitHub operations go over HTTP; git
-   and account config run in-process. The protocol never exposes local git
-   (that stays in the core SDK).
-3. **One connection, one server.** A single shared API client created when the
-   app starts (Tauri state). The app manages the lifecycle of the
-   `gitnapse-server` it talks to (sidecar), so an installed app is self
-   sufficient.
-4. **Frontend shared, OS behind commands.** The frontend is one shared vanilla
-   TS bundle; anything OS-specific surfaces through commands implemented in
-   `platforms/<os>.rs` and re-exported via `cfg(target_os)`.
-5. **No duplication anywhere.** If a piece of logic exists in another repo, we
-   delegate to it (see the single-owner table in the master ROADMAP). Within
-   this repo, each concern has one owner module.
-6. **Preview-friendly.** The frontend runs in a plain browser with mocked
-   commands, so UI work never blocks on system packages.
+- **Tauri 2 shell** (`src-tauri/`): thin. Registers the command surface, owns
+  `AppState` (one sidecar manager, one shared API client) and delegates every
+  call to the bridge. Window chrome uses native effects (`mica` on Windows,
+  `underWindowBackground` on macOS); Linux has no native vibrancy and falls
+  back to CSS glass, which also carries every in-page surface. No
+  `macOSPrivateApi`.
+- **Pure bridge** (`bridge/`, crate `gitnapse-bridge`): all desktop logic, no
+  Tauri or webview dependency, so it builds and unit-tests in CI/containers
+  (`cargo test -p gitnapse-bridge`).
+  - `api/client.rs` — typed async wrapper over `gitnapse-client` (remote data).
+  - `api/server.rs` — `gitnapse-server` sidecar lifecycle: resolve
+    (`GITNAPSE_SERVER_BIN` → sidecar path → `PATH`), health-check, spawn, and
+    kill only processes it started.
+  - `auth.rs`, `clone.rs`, `config.rs`, `dto.rs`, `git.rs` — in-process core
+    SDK usage: local git through the typed `gitnapse::git` module, shared
+    account config, token store and step-wise OAuth device flow.
+- **Hybrid data path**: remote GitHub data goes through the managed
+  `gitnapse-server` over HTTP (loopback `127.0.0.1:8787`,
+  `GITNAPSE_SERVER_URL` override); local git/config/auth run in-process through
+  the `gitnapse` core SDK (headless: `default-features = false`, TUI excluded).
+  The frontend never talks to GitHub or git directly.
+- **87 frozen commands** (`WORKSPACE.md` §4): camelCase arguments in JS,
+  snake_case payloads, additive DTO fields only.
+- **Auth single source of truth**: the core secure store (same
+  `~/.config/GitNapse` as the CLI/TUI). `auth_set_token` writes in-process,
+  `api_set_token` writes through the server, and the server re-reads the store
+  at runtime; OAuth runs in-process and step-wise (`auth_login_begin` /
+  `auth_login_poll`), with no TTY.
+- **Frontend** (`src/`): React 19 + Vite 8 + TypeScript strict, `HashRouter`,
+  React Query; `src/lib/bridge.ts` is the only module that imports Tauri APIs,
+  and mock mode keeps UI work possible in a plain browser.
+- **Icons**: real, generated from `gitnapse/assets/gitnapse-icon.png`; the full
+  Tauri icon set lives in `src-tauri/icons/`.
 
-## 3. Decisions (recorded)
+Build commands, crate layout and the sidecar flow are detailed in
+[`README.md`](README.md); glass audit lines are in
+[`docs/DESIGN.md`](docs/DESIGN.md).
 
-| Date | Decision |
-|---|---|
-| 2026-09 | Repo created as `gitnapse/desktop` (cloned locally as `desktop/`) |
-| 2026-09 | Framework: **Tauri 2** + Vite + vanilla TypeScript, no UI framework (ultra fast, ~2 KB assets) |
-| 2026-09 | Backend mode: **hybrid** - GitHub data via `gitnapse-server` HTTP API; git/config in-process via the core SDK |
-| 2026-09 | Frontend never talks to GitHub or git directly; everything goes through Tauri commands |
-| 2026-09 | No crates.io publishing until the ecosystem is fully modularized and tested; `path` deps point at sibling repos (`../gitnapse`, `../api/...`) |
-| 2026-09 | Canonical CLI binary stays `gitnapse`; a short alias (`gn`) is user-level only |
-| 2026-09 | Server transport: loopback-only by default; `GITNAPSE_SERVER_URL` overrides |
-| 2026-09 | Token lifecycle can be managed remotely via `/api/v1/auth/*` once the server is running |
+## 3. Done
 
-Open questions (no decision yet): exact bundle strategy for the `gitnapse-server`
-sidecar (externalBin vs. optional dependency), app icons and product name
-per OS, whether the app should ever bind non-loopback.
+- **Core (F0)** — `gitnapse` v0.1.2: headless feature split, `auth::TokenSource`,
+  step-wise OAuth device flow, typed `gitnapse::git` module and the
+  `GitProvider` extension (15 dashboard methods). See
+  [`../gitnapse/CHANGELOG.md`](../gitnapse/CHANGELOG.md).
+- **API (F1)** — `api` (Unreleased): drift fix and the full dashboard protocol
+  surface (issues detail/comments, users, search, events, notifications, PR
+  files/conversation, languages/contributors), request types for every route,
+  the `gitnapse-client` crate and the token lifecycle endpoints. See
+  [`../api/CHANGELOG.md`](../api/CHANGELOG.md).
+- **Bridge + sidecar (F2)** — `gitnapse-bridge` with the modules above; sidecar
+  spawn/health/stop ownership semantics; Tauri commands registered and
+  delegating.
+- **Design system + views (F3/F4)** — glass token contract, five-layer recipe,
+  fallback/contrast doctrine and per-surface audit lines in
+  `docs/DESIGN.md`; dashboard home, global search, repo explorer tabs, local
+  panel, profile, settings, auth onboarding and command palette shipped.
+- **Contract audit** — 87/87: every command is registered in `src-tauri`,
+  wrapped in `src/lib/bridge.ts`, handled by the mock and pinned by the
+  frontend contract test.
+- **Tests** — core 109 (library), api 40, bridge 23, frontend 99. Frontend
+  validation: `npm run build` (`tsc` strict + Vite) and `npx vitest run`.
 
-## 4. Current status
+## 4. Pending / next milestones
 
-Done (on the local clone, not yet committed/merged):
+- (a) **Sidecar packaging**: enable `bundle.externalBin` in
+  `src-tauri/tauri.conf.json` together with `scripts/build-sidecar.sh` per
+  platform, then smoke-test the installers (app resolves and controls its own
+  server with no `PATH`/env setup).
+- (b) **Visual and vibrancy matrix**: run the per-engine contrast/visual check
+  (Chromium, Firefox, WebKitGTK) and verify native window effects on macOS and
+  Windows. Blocked in the current container: no browser and no Tauri system
+  packages.
+- (c) **P1 UI wiring**: code search, notifications inbox, and the repo watchers
+  count (the repo DTO carries `watchers_count`; the protocol has no dedicated
+  watchers command yet).
+- (d) **Server lifecycle polish**: persisted auto-start preference and graceful
+  shutdown on app exit (kill only owned processes).
+- (e) **Release pipeline**: desktop versioning/updater configuration and
+  release artifacts.
+- (f) **Local clone detection**: optional cwd-aware detection so the local
+  panel can preselect the clone matching the viewed repository.
+- (g) **Inline commit detail**: render a commit's diff inside the app
+  (`compare_branches` parent..sha) instead of linking out to GitHub.
+- (h) **Notifications actions**: once the inbox screen lands (c), add the
+  mark-read action (`notification_mark_read`) and an unread badge in the top
+  bar.
 
-- [x] Tauri 2 skeleton: single window, dark theme, header with auth chip.
-- [x] Structure: `src-tauri/src/shared/` (commands, backend, git_ops) and
-      `src-tauri/src/platforms/{linux,macos,windows,fallback}.rs` with
-      `open_in_file_manager`.
-- [x] Complete command surface bridged (~37 commands):
-      local (auth_status, clone_dir, set_clone_dir, clone_repo, git_raw),
-      remote (identity, content, commits/CI, issues, PRs, releases, repo
-      creation, server token management), platform (open folder).
-- [x] Frontend sections: Clone panel (repo + destination + picker + save
-      default) and GitHub search with server health check; browser preview
-      mode with mocks.
-- [x] App-level ROADMAP.md (this file) and README with layout/rules.
+## 5. Known limitations
 
-Known gaps to close first:
+- `src-tauri` **cannot be compiled in the current build container** (no
+  `pkg-config`, glib or webkit system packages). It was type-checked through a
+  userland `pkg-config` shim, and the pure `bridge` crate is fully built and
+  tested; the first `cargo check`/`npm run tauri build` on a machine with the
+  Tauri system packages may still surface integration errors.
+- Glass surfaces are verified mathematically (`src/lib/contrast.test.ts`) plus
+  static review only; per-engine rendering and native vibrancy are unverified
+  (see (b)).
+- The sidecar is not bundled by default (see (a)); a built app needs
+  `gitnapse-server` on `PATH` or `GITNAPSE_SERVER_BIN` until then.
 
-- [ ] Rust side not compiled yet on any machine (system packages pending:
-      `libwebkit2gtk-4.1-dev` etc. on Linux); first `cargo check`/`tauri dev`
-      will surface integration errors to fix.
-- [ ] `tauri.conf.json` has no icons (`"icon": []`) and no bundle config.
+## 6. Out of scope
 
-## 5. Milestones
-
-### M1 - Working shell (next)
-
-Goal: a runnable app that clones and browses in dev mode.
-
-- [ ] Fix whatever the first `npm run tauri dev` compile surfaces.
-- [ ] Shared API connection: create `Api` once at startup, expose through
-      Tauri `State`; stop constructing a client per command.
-- [ ] `shared/server.rs`: server lifecycle module
-      - resolve the `gitnapse-server` binary (sidecar path first, then PATH,
-        then a documented error)
-      - `ensure_running()`: health-check `GET /health` with retries, spawn the
-        server if absent, remember whether we own the process
-      - shutdown handling when the app exits (kill only if we spawned it)
-- [ ] Persisted settings: `GITNAPSE_SERVER_URL`/port and an auto-start
-      preference (stored with the gitnapse account config, not app-private).
-- [ ] UI: repo explorer (repo -> tree -> file preview) fed by the API, with
-      language/description from search results.
-- [ ] Acceptance: install system deps, `npm run tauri dev`, clone a repo,
-      browse its tree, open a file. All GitHub panels work with the server
-      started automatically by the app.
-
-### M2 - Local repository panel
-
-Goal: a real working directory view (the desktop counterpart of the TUI
-inside a repo).
-
-- [ ] Repo picker: choose a local folder (recent list from the config).
-- [ ] Views: status, log (raw via `git_raw` for now), branches.
-- [ ] Actions: commit (message + stage all), pull (rebase option), push,
-      checkout/create branch, open in file manager.
-- [ ] Where the core CLI functions are cwd-bound, keep using `git_raw` with an
-      explicit `cwd` (mirroring the documented CLI flags), and note in code
-      when a future core refactor can provide cwd-aware canonical wrappers.
-- [ ] Acceptance: full local workflow on a real repo without touching a
-      terminal.
-
-### M3 - GitHub management panels
-
-Goal: PR/issues/releases management equal to the CLI/TUI, entirely over the
-API.
-
-- [ ] Issues panel: list/filter by state, create, close.
-- [ ] PR panel: list, detail (branches, merge info), create, merge (method),
-      open/close, review (approve/request changes/comment), comments,
-      commits.
-- [ ] Releases panel: list and create.
-- [ ] Starred/rate-limit/identity widgets (all data already bridged).
-- [ ] Acceptance: complete a PR cycle (open -> comment -> approve -> merge)
-      from the UI.
-
-### M4 - Session and packaging
-
-Goal: an installable, self-sufficient app per OS.
-
-- [ ] Auth onboarding in the UI: OAuth device flow presented inside the app
-      (no terminal), then persist through `POST /api/v1/auth/token`.
-- [ ] Server token lifecycle UI (status, set, clear) reflecting
-      `/api/v1/auth/*` semantics (including the env-managed `409` case).
-- [ ] Bundle: icons per OS, `gitnapse-server` sidecar, product metadata.
-- [ ] Windows/macOS/Linux builds green; smoke tests on all three.
-- [ ] Acceptance: downloaded app on a fresh machine starts, manages its own
-      server, authenticates, and runs the full flow with no extra installs.
-
-## 6. Acceptance criteria (ecosystem level)
-
-The same workflow - search, clone, commit, manage PRs - works identically
-from the terminal (CLI/TUI) and from this app, backed by the same logic, with
-no duplicated implementation. Any new capability first gets an owner in the
-master ROADMAP single-owner table, then an implementation, then optional thin
-exposure here.
-
-## 7. Explicitly out of scope (for this repo)
-
-- Landing/marketing website (`web/` repo).
-- The GitNapse TUI/CLI themselves (`gitnapse` repo).
-- The HTTP protocol, its server, or its client crate (`api/` repo) - we are a
-  consumer.
-- Theme registry content (`themes/` repo).
-- Publishing crates to crates.io (ecosystem decision: later).
-
-## 8. Dependencies on sibling repos
-
-- `gitnapse` core (path: `../../gitnapse`): SDK modules used headless
-  (provider is not called directly here, but auth source, account config and
-  `cli::clone_repo` are).
-- `api/crates/gitnapse-client` + `gitnapse-protocol` (paths under
-  `../../api/`): remote data + wire types.
-- `gitnapse-server` binary (built from `api`): required at runtime for all
-  GitHub operations (M1 makes this automatic).
-
-Keep these paths in sync when the workspace layout changes; the master
-ROADMAP tracks the dependency graph.
+- `web/` (landing/marketing site).
+- `themes/` theme registry content.
+- Publishing crates to crates.io (ecosystem decision, later).
+- The core SDK, the HTTP protocol/server/client and the TUI/CLI themselves:
+  owned by the sibling repos and consumed here.

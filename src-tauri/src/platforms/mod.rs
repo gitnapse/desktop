@@ -1,8 +1,8 @@
 //! Platform-specific behavior, dispatched by `cfg(target_os)`.
 //!
-//! Everything generic lives in `shared/`; this tree only holds the few
-//! operations that genuinely differ per OS (opening folders in the file
-//! manager, future: notifications, app menu, deep links, updater...).
+//! Only genuine OS differences live here (opening folders in the file
+//! manager, opening URLs in the browser); everything else is in the bridge
+//! crate. Signals are surfaced through Tauri commands in `commands/platform`.
 
 #[cfg(target_os = "linux")]
 mod linux;

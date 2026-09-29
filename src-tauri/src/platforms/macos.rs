@@ -1,11 +1,21 @@
-//! macOS platform backend (`open` command).
+//! macOS platform backend (`open`).
 
-/// Open a folder in Finder.
-#[tauri::command]
-pub fn open_in_file_manager(path: String) -> Result<(), String> {
-    std::process::Command::new("open")
-        .arg(&path)
+use std::process::Command;
+
+/// Opens a folder in Finder.
+pub fn open_in_file_manager(path: &str) -> Result<(), String> {
+    Command::new("open")
+        .arg(path)
         .status()
         .map(|_| ())
-        .map_err(|e| format!("cannot open folder with open(1): {e}"))
+        .map_err(|error| format!("cannot open folder with open(1): {error}"))
+}
+
+/// Opens a URL in the default browser.
+pub fn open_external(url: &str) -> Result<(), String> {
+    Command::new("open")
+        .arg(url)
+        .status()
+        .map(|_| ())
+        .map_err(|error| format!("cannot open URL with open(1): {error}"))
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "GitNapse Desktop",
+  "productName": "GitNapse",
   "version": "0.1.0",
   "identifier": "com.gitnapse.desktop",
   "build": {
@@ -12,21 +12,32 @@
   "app": {
     "windows": [
       {
-        "title": "GitNapse Desktop",
-        "width": 1080,
-        "height": 700,
-        "minWidth": 640,
-        "minHeight": 480,
-        "resizable": true
+        "label": "main",
+        "title": "GitNapse",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "windowEffects": {
+          "effects": ["mica", "underWindowBackground"],
+          "state": "followsWindowActiveState"
+        }
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:8787; font-src 'self'"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }

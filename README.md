@@ -1,31 +1,63 @@
 # GitNapse Desktop
 
-Desktop interface for GitNapse. Built with **Tauri 2** and an ultra-light
-frontend (Vite + vanilla TypeScript, no framework) for instant startup.
+Desktop interface for GitNapse. Built with **Tauri 2** + **React 19/Vite**
+(`src/`) on top of a pure-Rust bridge crate; GitHub data flows through
+`gitnapse-server` (HTTP) and local git/config/auth run in-process through the
+`gitnapse` core SDK. The frontend never talks to GitHub or git directly.
 
-The UI is a thin shell: all heavy logic (provider, auth, config, git) runs
-**in-process** through the `gitnapse` core SDK (headless build, TUI disabled).
-
-## Layout
+## Architecture
 
 ```
 desktop/
-  index.html             single-page shell
-  src/                   frontend (vanilla TS + CSS, no framework)
-  src-tauri/
-    src/
-      main.rs            entry point (wires shared + platform commands)
-      shared/            cross-platform logic (auth, config, git bridge)
-      platforms/         per-OS code, selected with cfg(target_os):
-                         linux.rs  macos.rs  windows.rs  fallback.rs
-    tauri.conf.json      window + build config
-    capabilities/        permission grants (dialog, core)
+  Cargo.toml               cargo workspace (members: bridge, src-tauri)
+  bridge/                  PURE Rust lib: all desktop logic, no tauri/webview
+    src/api/client.rs      typed async wrapper over gitnapse-client
+    src/api/server.rs      gitnapse-server sidecar lifecycle
+    src/auth.rs            token status/store + OAuth device flow (core)
+    src/clone.rs           git clone with clone://progress parsing
+    src/config.rs          clone-dir preference (shared account config)
+    src/dto.rs             bridge payloads + re-exported core/protocol DTOs
+    src/git.rs             typed local git wrappers (gitnapse::git)
+  src-tauri/               THIN shell: commands only delegate to bridge
+    src/main.rs            AppState (sidecar manager + shared API client)
+    src/commands/          auth, local, git, remote, platform
+    src/platforms/         per-OS: xdg-open / open / explorer + cmd start
+    tauri.conf.json        window 1280x800, CSP, native window effects
+    capabilities/          core defaults + event + dialog grants
+  src/                     React app (features, ui, styles)
 ```
 
-Rule: anything that behaves the same on the three OS goes in `shared/`; only
-genuine OS differences (opening folders, notifications, menu, updater...) go
-in `platforms/<os>.rs`, re-exported by `platforms/mod.rs` with `cfg(target_os)`.
-The frontend is shared; OS behavior is surfaced through commands.
+Rule: `bridge` compiles and unit-tests **without** webview/system packages
+(`cargo test -p gitnapse-bridge`), so the logic is verified in CI/containers.
+`src-tauri` registers the frozen command surface from `WORKSPACE.md` §4 and
+forwards arguments/events — nothing else.
+
+## Hybrid backend
+
+1. **Remote GitHub data** (search, repos, issues, PRs, releases, actions,
+   profile, notifications) goes through **`gitnapse-server` over HTTP** using
+   `gitnapse-client`. The app owns the sidecar lifecycle.
+2. **Local git + config + auth token store** run **in-process through the
+   `gitnapse` core SDK** (headless: `default-features = false`, TUI excluded).
+
+### Sidecar lifecycle (`bridge::api::server`)
+
+- Binary resolution: `GITNAPSE_SERVER_BIN` → sibling of the app executable
+  (Tauri sidecar location) → `gitnapse-server` in `PATH` → clear error.
+- `server_start` / `ServerManager::ensure_running()`: `GET /health` with
+  retries; spawns `gitnapse-server --host 127.0.0.1 --port 8787` when nothing
+  answers, remembers `owned = true`.
+- `server_stop` / drop: kills **only** processes the app spawned; external
+  servers are left running.
+- URL: `GITNAPSE_SERVER_URL` overrides the default `http://127.0.0.1:8787`.
+
+### Auth single source of truth
+
+The GitHub token lives in the core secure store (same `~/.config/GitNapse`
+used by the CLI/TUI). Both paths converge: `auth_set_token` writes it
+in-process, `api_set_token` writes it through the server, and the server
+re-reads the store at runtime. OAuth device flow runs in-process, step-wise
+(`auth_login_begin` / `auth_login_poll`), no TTY.
 
 ## Prerequisites
 
@@ -36,52 +68,72 @@ The frontend is shared; OS behavior is surfaced through commands.
 sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-- The `gitnapse` core must live next to this repo (`../gitnapse`) because the
-  crates are wired with `path =` dependencies (no crates.io publishing yet).
+- The `gitnapse` and `api` repos must live next to this repo (`../gitnapse`,
+  `../api`): the crates are wired with `path =` dependencies.
 
-## Run (dev)
+## Build & verify
 
-The frontend also runs in a plain browser: Tauri commands are mocked and a
-banner warns about it (ideal for UI work without the system packages).
+```sh
+# bridge: pure Rust, no webview packages needed (CI-safe)
+cargo fmt --all
+cargo clippy -p gitnapse-bridge --all-targets -- -D warnings
+cargo test -p gitnapse-bridge
+
+# Tauri shell (needs the system packages above)
+cd src-tauri && cargo check          # or: npm run tauri build
+```
+
+Frontend (browser preview with mocked commands, no Rust needed):
 
 ```sh
 npm install
-npm run dev          # browser preview at http://localhost:1420
-npm run tauri dev    # real desktop window (needs the system packages)
+npm run dev            # http://localhost:1420
+npm run tauri dev      # real desktop window (needs system packages)
+npm run tauri build    # bundle
 ```
 
-## Build
+### Sidecar packaging (opt-in)
+
+`npm run tauri build` produces an app that resolves `gitnapse-server` from
+`GITNAPSE_SERVER_BIN` or `PATH`. To make the bundle self-sufficient, stage the
+server binary and enable the Tauri sidecar:
 
 ```sh
-npm run tauri build
+./scripts/build-sidecar.sh   # builds ../api and stages binaries/gitnapse-server-<target-triple>
 ```
 
-## Commands exposed to the UI
+Then add `"externalBin": ["binaries/gitnapse-server"]` to the `bundle` section
+of `src-tauri/tauri.conf.json` (kept off by default so builds work without the
+API repo checked out next door).
 
-The complete hybrid surface is bridged (each is a thin delegation, no logic
-duplicated):
 
-**Local — git + config, in-process with the core SDK** (`shared/git_ops.rs`):
-`auth_status`, `clone_dir`, `set_clone_dir`, `clone_repo` (owner/repo[:branch]
-or URL into the configured folder) and `git_raw` (escape hatch: run any git
-command scoped to a repository folder, output as raw text).
+## Command surface (Tauri, frozen)
 
-**Remote — GitHub data through the GitNapse HTTP API** (`shared/backend.rs`
-+ `gitnapse-client`, server at `GITNAPSE_SERVER_URL`):
-- identity: `server_status`, `api_user`, `starred_repos`, `rate_limit`,
-  `api_auth_status`, `api_set_token`, `api_clear_token`
-- content: `search_repos`, `repo_detail`, `branches`, `repo_tree`,
-  `file_content`
-- commits/CI: `recent_commits`, `compare_branches`, `check_runs`,
-  `workflow_runs`
-- issues: `issues`, `create_issue`, `close_issue`
-- pull requests: `pull_requests`, `pull_request`, `create_pull_request`,
-  `merge_pull_request`, `update_pull_request`, `pull_request_reviews`,
-  `review_pull_request`, `pull_request_comments`, `comment_pull_request`,
-  `pull_request_commits`
-- releases/repos: `releases`, `create_release`, `create_repo`
+Invoke args are camelCase in JS; payloads are snake_case.
 
-**Platform** (`platforms/<os>.rs`): `open_in_file_manager`
-(xdg-open / open / explorer).
+- **Local/auth** (`commands/auth.rs`): `auth_status`, `auth_set_token`,
+  `auth_clear_token`, `auth_login_begin`, `auth_login_poll`
+- **Local/clone** (`commands/local.rs`): `clone_dir`, `set_clone_dir`,
+  `clone_repo` (+ `clone://progress` events `{ phase, message, percent? }`)
+- **Local/git** (`commands/git.rs`): `git_repo_info`, `git_status`, `git_log`,
+  `git_diff` (`{kind, path?, rev?, from?, to?}`), `git_stage`, `git_unstage`,
+  `git_discard`, `git_commit`, `git_push`, `git_pull`, `git_fetch`,
+  `git_branches`, `git_checkout`, `git_branch_create`, `git_branch_delete`,
+  `git_merge`, `git_reset`, `git_stash_list`, `git_stash_push`,
+  `git_stash_pop`, `git_stash_drop`, `git_tags`, `git_tag_create`,
+  `git_tag_delete`, `git_remotes`, `git_remote_add`, `git_remote_remove`,
+  `git_remote_rename`
+- **Remote** (`commands/remote.rs`): server (`server_status`, `server_start`,
+  `server_stop`), API auth (`api_auth_status`, `api_set_token`,
+  `api_clear_token`), user/profile/activity (8), search (3), repos (8),
+  issues (7), pull requests (12), releases/actions/repos (5)
+- **Platform** (`commands/platform.rs`): `open_in_file_manager`,
+  `open_external`
 
-See `ROADMAP.md` in this repo for the app-specific roadmap.
+Window chrome uses Tauri native effects (`mica` on Windows 11,
+`underWindowBackground` on macOS) via `windowEffects`; Linux has no native
+vibrancy and falls back to the CSS glass. No `macOSPrivateApi` (public APIs
+only). In-page glass surfaces stay CSS `backdrop-filter`.
+
+See `ROADMAP.md` for the app-specific roadmap and `docs/DESIGN.md` for the
+glass audit lines.

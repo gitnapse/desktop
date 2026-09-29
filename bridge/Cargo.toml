@@ -1,0 +1,19 @@
+[package]
+name = "gitnapse-bridge"
+version = "0.1.0"
+edition = "2024"
+description = "Pure Rust bridge for GitNapse Desktop: gitnapse core SDK + HTTP API, no Tauri, no webview."
+license = "MIT"
+
+[dependencies]
+# Core SDK (headless: TUI excluded) for auth, config, oauth and local git.
+gitnapse = { path = "../../gitnapse", default-features = false }
+# Remote GitHub data: typed client for the GitNapse HTTP protocol.
+gitnapse-client = { path = "../../api/crates/gitnapse-client" }
+gitnapse-protocol = { path = "../../api/crates/gitnapse-protocol" }
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

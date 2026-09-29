@@ -1,0 +1,10 @@
+[workspace]
+members = ["bridge", "src-tauri"]
+resolver = "2"
+
+# Shared release profile for the bridge (and the Tauri shell at bundle time).
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
