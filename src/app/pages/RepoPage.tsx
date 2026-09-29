@@ -13,6 +13,7 @@ import "../../features/repo/repo.css";
 const repoTabs = [
   { value: "overview", label: "Overview" },
   { value: "code", label: "Code" },
+  { value: "graph", label: "Graph" },
   { value: "commits", label: "Commits" },
   { value: "branches", label: "Branches" },
   { value: "compare", label: "Compare" },

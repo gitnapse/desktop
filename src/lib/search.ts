@@ -1,16 +1,19 @@
 import type { RepoDto } from "./types";
 
-export type SearchTab = "repos" | "users";
-export type UserTab = "repos" | "starred" | "activity";
+export type SearchTab = "repos" | "users" | "orgs" | "code";
+export type UserTab = "repos" | "graph" | "starred" | "activity";
 export type RepoSort = "updated" | "created" | "pushed" | "full_name";
 
 export const searchTabs: ReadonlyArray<{ value: SearchTab; label: string }> = [
   { value: "repos", label: "Repositories" },
   { value: "users", label: "Users" },
+  { value: "orgs", label: "Organizations" },
+  { value: "code", label: "Code" },
 ];
 
 export const userTabs: ReadonlyArray<{ value: UserTab; label: string }> = [
   { value: "repos", label: "Repositories" },
+  { value: "graph", label: "Graph" },
   { value: "starred", label: "Starred" },
   { value: "activity", label: "Activity" },
 ];
@@ -23,11 +26,17 @@ export const repoSortOptions: ReadonlyArray<{ value: RepoSort; label: string }> 
 ];
 
 export function parseSearchTab(value: string | null | undefined): SearchTab {
-  return value === "users" ? "users" : "repos";
+  if (value === "users" || value === "orgs" || value === "code") {
+    return value;
+  }
+  return "repos";
 }
 
 export function parseUserTab(value: string | null | undefined): UserTab {
-  return value === "starred" || value === "activity" ? value : "repos";
+  if (value === "graph" || value === "starred" || value === "activity") {
+    return value;
+  }
+  return "repos";
 }
 
 export function parseRepoSort(value: string | null | undefined): RepoSort {
@@ -69,8 +78,8 @@ export function buildSearchQuery(input: SearchParamInput): string {
   if (query.length > 0) {
     params.set("q", query);
   }
-  if (input.tab === "users") {
-    params.set("tab", "users");
+  if (input.tab === "users" || input.tab === "orgs" || input.tab === "code") {
+    params.set("tab", input.tab);
   }
   if (input.language) {
     params.set("language", input.language);
@@ -86,7 +95,7 @@ export interface UserParamInput {
 
 export function buildUserQuery(input: UserParamInput): string {
   const params = new URLSearchParams();
-  if (input.tab === "starred" || input.tab === "activity") {
+  if (input.tab === "starred" || input.tab === "activity" || input.tab === "graph") {
     params.set("tab", input.tab);
   }
   if (input.tab === "repos" && input.sort && input.sort !== "updated") {

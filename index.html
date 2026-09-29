@@ -21,6 +21,32 @@
           if (localStorage.getItem("gitnapse.transparency") === "reduce") {
             document.documentElement.dataset.transparency = "reduce";
           }
+          var cachedRaw = localStorage.getItem("gitnapse.themeTokens");
+          if (cachedRaw) {
+            var cached = JSON.parse(cachedRaw);
+            if (cached && cached.colors && cached.tokens) {
+              document.documentElement.dataset.theme = cached.colors.dark ? "dark" : "light";
+              document.documentElement.dataset.themeName = cached.name;
+              var keys = [
+                "--bg", "--surface", "--surface-raised", "--line", "--line-visible",
+                "--control-line", "--ink-strong", "--ink", "--ink-muted", "--ink-faint",
+                "--focus-ring", "--scrim", "--texture-ink", "--overlay-surface",
+                "--selection-bg", "--selection-ink",
+                "--accent", "--accent-2", "--accent-3",
+                "--accent-soft", "--accent-2-soft", "--accent-3-soft",
+                "--glass-tint-rgb",
+                "--status-ok", "--status-warn", "--status-err", "--status-info",
+                "--status-ok-subtle", "--status-warn-subtle", "--status-err-subtle",
+                "--status-info-subtle"
+              ];
+              for (var i = 0; i < keys.length; i++) {
+                var value = cached.tokens[keys[i]];
+                if (value) {
+                  document.documentElement.style.setProperty(keys[i], value);
+                }
+              }
+            }
+          }
         } catch (error) {
           document.documentElement.dataset.theme = "dark";
         }

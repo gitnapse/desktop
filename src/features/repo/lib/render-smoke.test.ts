@@ -7,6 +7,7 @@ import RepoPage from "../../../app/pages/RepoPage";
 import LocalPage from "../../../app/pages/LocalPage";
 import OverviewTab from "../../../app/pages/repo/OverviewTab";
 import CodeTab from "../../../app/pages/repo/CodeTab";
+import GraphTab from "../../../app/pages/repo/GraphTab";
 import CommitsTab from "../../../app/pages/repo/CommitsTab";
 import BranchesTab from "../../../app/pages/repo/BranchesTab";
 import CompareTab from "../../../app/pages/repo/CompareTab";
@@ -26,6 +27,7 @@ function render(children: Parameters<typeof createMemoryRouter>[0], initialEntry
 const tabs: Array<[string, ComponentType]> = [
   ["overview", OverviewTab],
   ["code", CodeTab],
+  ["graph", GraphTab],
   ["commits", CommitsTab],
   ["branches", BranchesTab],
   ["compare", CompareTab],

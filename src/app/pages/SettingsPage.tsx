@@ -5,6 +5,9 @@ import { Page } from "../Page";
 import { Button, Checkbox, Input, Select, StatusLine, Tabs } from "../../ui";
 import { AuthFlow } from "../AuthFlow";
 import { useTheme } from "../ThemeProvider";
+import { ThemePicker } from "../../features/themes/components/ThemePicker";
+import { useServerAutoStartPreference } from "../server";
+import { useClearCache } from "../auth";
 import * as bridge from "../../lib/bridge";
 import { mockCommands } from "../../lib/mock";
 import { isGlassLevel, isThemePreference } from "../../lib/theme";
@@ -100,6 +103,7 @@ function CloneDirSection() {
 
 function ServerSection() {
   const queryClient = useQueryClient();
+  const [autoStart, setAutoStart] = useServerAutoStartPreference();
   const status = useQuery({
     queryKey: ["server-status"],
     queryFn: bridge.serverStatus,
@@ -160,6 +164,17 @@ function ServerSection() {
         </div>
       </div>
       <div className="settings-stack">
+        <Checkbox
+          label="Start automatically"
+          description="spawn gitnapse-server on launch when it is not already running."
+          checked={autoStart}
+          onChange={(event) => {
+            setAutoStart(event.target.checked);
+            if (event.target.checked && !running) {
+              start.mutate();
+            }
+          }}
+        />
         <div>
           <p className="t-label">Base URL</p>
           <p className="t-data">{info?.url ?? "http://127.0.0.1:8787"}</p>
@@ -170,6 +185,42 @@ function ServerSection() {
         {status.isError ? <StatusLine kind="error" message={status.error.message} /> : null}
         {start.isError ? <StatusLine kind="error" message={start.error.message} /> : null}
         {stop.isError ? <StatusLine kind="error" message={stop.error.message} /> : null}
+      </div>
+    </section>
+  );
+}
+
+function CacheSection() {
+  const clearCache = useClearCache();
+  const [cleared, setCleared] = useState(false);
+  return (
+    <section className="section glass-flat" aria-labelledby="settings-cache">
+      <header className="section__head">
+        <p className="t-label section__label">Data</p>
+        <h2 id="settings-cache" className="section__title">
+          Cache
+        </h2>
+      </header>
+      <p className="t-caption">
+        Repositories, trees, commits, issues, pull requests and search results are cached on disk
+        (IndexedDB) for offline navigation and to stay well under the GitHub API rate limit. Only
+        this navigation data is stored; tokens and authentication are never cached.
+      </p>
+      <div className="settings-row">
+        <div className="settings-row__controls">
+          <Button
+            variant="technical"
+            onClick={() => {
+              clearCache();
+              setCleared(true);
+            }}
+          >
+            Clear cached data
+          </Button>
+        </div>
+        <div className="settings-stack">
+          {cleared ? <StatusLine kind="saved" message="CACHE CLEARED" /> : null}
+        </div>
       </div>
     </section>
   );
@@ -208,7 +259,7 @@ function AboutSection() {
 }
 
 export default function SettingsPage() {
-  const { preferences, setTheme, setGlass, setTransparency } = useTheme();
+  const { preferences, activeTheme, setTheme, setGlass, setTransparency } = useTheme();
 
   return (
     <Page title="Settings" label="GitNapse // Configuration">
@@ -233,19 +284,26 @@ export default function SettingsPage() {
             </h2>
           </header>
           <div className="settings-stack">
-            <div>
-              <p className="t-label">Theme</p>
-              <Tabs
-                ariaLabel="Theme preference"
-                value={preferences.theme}
-                items={themeOptions}
-                onChange={(value) => {
-                  if (isThemePreference(value)) {
-                    setTheme(value);
-                  }
-                }}
-              />
-            </div>
+            <ThemePicker />
+            {activeTheme ? (
+              <p className="t-caption">
+                {`Custom theme active — ${activeTheme.name}. Reset above to return to the default palette.`}
+              </p>
+            ) : (
+              <div>
+                <p className="t-label">Default mode</p>
+                <Tabs
+                  ariaLabel="Theme preference"
+                  value={preferences.theme}
+                  items={themeOptions}
+                  onChange={(value) => {
+                    if (isThemePreference(value)) {
+                      setTheme(value);
+                    }
+                  }}
+                />
+              </div>
+            )}
             <Select
               label="Glass level"
               value={preferences.glass}
@@ -268,6 +326,7 @@ export default function SettingsPage() {
         </section>
 
         <ServerSection />
+        <CacheSection />
         <AboutSection />
       </div>
     </Page>

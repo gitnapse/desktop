@@ -501,9 +501,12 @@ interface MockState {
   issueComments: T.IssueCommentDto[];
   prConversation: T.IssueCommentDto[];
   pulls: T.PrDetailDto[];
+  reviews: T.PrReviewDto[];
+  prComments: T.PrCommentDto[];
   releases: T.ReleaseDto[];
   notifications: T.NotificationDto[];
   branchList: T.GitBranch[];
+  remoteBranches: string[];
   tagList: T.GitTag[];
   remoteList: T.GitRemote[];
   stashList: T.GitStashEntry[];
@@ -525,9 +528,12 @@ const state: MockState = {
   issueComments: copy(issueCommentFixtures),
   prConversation: copy(prConversationFixtures),
   pulls: copy(pulls),
+  reviews: copy(prReviewFixtures),
+  prComments: copy(prCommentFixtures),
   releases: copy(releases),
   notifications: copy(notificationFixtures),
   branchList: copy(branches),
+  remoteBranches: ["main", "feat/glass-shell", "develop", "release/0.1"],
   tagList: copy(tags),
   remoteList: copy(remotes),
   stashList: copy(stash),
@@ -586,6 +592,16 @@ function mutateStatus(mutate: (status: T.GitStatus) => void): void {
     next.untracked.length === 0 &&
     next.conflicted.length === 0;
   state.status = next;
+}
+
+function dropStash(index: number): void {
+  state.stashList = state.stashList
+    .filter((entry) => entry.index !== index)
+    .map((entry) =>
+      entry.index > index
+        ? { ...entry, index: entry.index - 1, name: `stash@{${entry.index - 1}}` }
+        : entry,
+    );
 }
 
 const handlers: Record<string, Handler> = {
@@ -767,7 +783,17 @@ const handlers: Record<string, Handler> = {
     return null;
   },
   git_merge: (args) => `merged ${requireString(args, "branch")} into ${state.status.branch ?? "main"}\n`,
-  git_reset: () => null,
+  git_reset: (args) => {
+    const hard = optionalBoolean(args, "hard") ?? false;
+    mutateStatus((status) => {
+      status.staged = [];
+      if (hard) {
+        status.unstaged = [];
+        status.untracked = [];
+      }
+    });
+    return null;
+  },
   git_stash_list: () => copy(state.stashList),
   git_stash_push: (args) => {
     const message = optionalString(args, "message") ?? "WIP";
@@ -777,16 +803,12 @@ const handlers: Record<string, Handler> = {
     ];
     return null;
   },
-  git_stash_pop: () => {
-    state.stashList = state.stashList
-      .slice(1)
-      .map((entry) => ({ ...entry, index: entry.index - 1, name: `stash@{${entry.index - 1}}` }));
+  git_stash_pop: (args) => {
+    dropStash(optionalNumber(args, "index") ?? 0);
     return null;
   },
-  git_stash_drop: () => {
-    state.stashList = state.stashList
-      .slice(1)
-      .map((entry) => ({ ...entry, index: entry.index - 1, name: `stash@{${entry.index - 1}}` }));
+  git_stash_drop: (args) => {
+    dropStash(optionalNumber(args, "index") ?? 0);
     return null;
   },
   git_tags: () => copy(state.tagList),
@@ -912,7 +934,7 @@ const handlers: Record<string, Handler> = {
     return copy(paginate(matches, args, 30));
   },
   repo_detail: (args) => copy(findRepo(requireString(args, "repo"))),
-  branches: () => copy(state.branchList.map((entry) => entry.name)),
+  branches: () => copy(state.remoteBranches),
   repo_tree: () => copy(treeFixtures),
   file_content: (args) => {
     const path = requireString(args, "path");
@@ -1008,8 +1030,8 @@ const handlers: Record<string, Handler> = {
   pull_request: (args) => copy(findPull(requireNumber(args, "number"))),
   pr_files: () => copy(prFileFixtures),
   pull_request_commits: () => copy(commits.slice(0, 4)),
-  pull_request_reviews: () => copy(prReviewFixtures),
-  pull_request_comments: () => copy(prCommentFixtures),
+  pull_request_reviews: () => copy(state.reviews),
+  pull_request_comments: () => copy(state.prComments),
   pr_conversation: () => copy(state.prConversation),
   create_pull_request: (args) => {
     const number = 100 + state.pulls.length;
@@ -1043,8 +1065,37 @@ const handlers: Record<string, Handler> = {
     );
     return null;
   },
-  review_pull_request: () => null,
-  comment_pull_request: () => null,
+  review_pull_request: (args) => {
+    requireNumber(args, "number");
+    const event = requireString(args, "event");
+    const stateName =
+      event === "approve" ? "APPROVED" : event === "request_changes" ? "CHANGES_REQUESTED" : "COMMENTED";
+    const review: T.PrReviewDto = {
+      id: state.nextCommentId++,
+      user: xscriptor,
+      body: optionalString(args, "body") ?? null,
+      state: stateName,
+      submitted_at: MOCK_NOW,
+      commit_id: commits[0]?.sha ?? null,
+    };
+    state.reviews = [...state.reviews, review];
+    return null;
+  },
+  comment_pull_request: (args) => {
+    requireNumber(args, "number");
+    const comment: T.PrCommentDto = {
+      id: state.nextCommentId++,
+      user: xscriptor,
+      body: requireString(args, "body"),
+      path: null,
+      position: null,
+      commit_id: commits[0]?.sha ?? null,
+      created_at: MOCK_NOW,
+      updated_at: MOCK_NOW,
+    };
+    state.prComments = [...state.prComments, comment];
+    return null;
+  },
   releases: (args) => copy(state.releases.slice(0, optionalNumber(args, "perPage") ?? 30)),
   create_release: (args) => {
     const tagName = requireString(args, "tagName");

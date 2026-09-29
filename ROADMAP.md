@@ -3,8 +3,8 @@
 > App-specific roadmap for `desktop/`. The ecosystem map — repo boundaries,
 > dependency direction, the frozen command contract and phases F0-F5 — lives
 > in [`../WORKSPACE.md`](../WORKSPACE.md); this document details the desktop
-> track. Status: redesign implemented; sidecar packaging, visual QA and P1 UI
-> wiring open.
+> track. Status: P1 UI wiring, registry themes, inline commit diffs and server
+> auto-start landed; sidecar packaging, visual QA and release pipeline open.
 
 ## 1. Vision
 
@@ -88,7 +88,13 @@ Build commands, crate layout and the sidecar flow are detailed in
 - **Contract audit** — 87/87: every command is registered in `src-tauri`,
   wrapped in `src/lib/bridge.ts`, handled by the mock and pinned by the
   frontend contract test.
-- **Tests** — core 109 (library), api 40, bridge 23, frontend 99. Frontend
+- **P1 UI wiring** — code search tab, notifications inbox with unread badge and
+  mark-read, repo watchers count, inline remote commit diffs, working-tree reset
+  UI and the server auto-start preference all landed.
+- **Registry themes** — the `gitnapse/themes` registry drives a swatch picker in
+  Settings; accents are distributed across status roles by hue with a WCAG AA
+  contrast guarantee, and the selection is applied before first paint.
+- **Tests** — core 109 (library), api 40, bridge 23, frontend 125. Frontend
   validation: `npm run build` (`tsc` strict + Vite) and `npx vitest run`.
 
 ## 4. Pending / next milestones
@@ -101,20 +107,17 @@ Build commands, crate layout and the sidecar flow are detailed in
   (Chromium, Firefox, WebKitGTK) and verify native window effects on macOS and
   Windows. Blocked in the current container: no browser and no Tauri system
   packages.
-- (c) **P1 UI wiring**: code search, notifications inbox, and the repo watchers
-  count (the repo DTO carries `watchers_count`; the protocol has no dedicated
-  watchers command yet).
-- (d) **Server lifecycle polish**: persisted auto-start preference and graceful
-  shutdown on app exit (kill only owned processes).
-- (e) **Release pipeline**: desktop versioning/updater configuration and
+- (c) **Local clone detection**: optional cwd-aware detection so the local panel
+  can preselect the clone matching the viewed repository (the repo header
+  already guesses `cloneDir/fullName`).
+- (d) **Release pipeline**: desktop versioning/updater configuration and
   release artifacts.
-- (f) **Local clone detection**: optional cwd-aware detection so the local
-  panel can preselect the clone matching the viewed repository.
-- (g) **Inline commit detail**: render a commit's diff inside the app
-  (`compare_branches` parent..sha) instead of linking out to GitHub.
-- (h) **Notifications actions**: once the inbox screen lands (c), add the
-  mark-read action (`notification_mark_read`) and an unread badge in the top
-  bar.
+- (e) **Theme contributions**: a "submit a theme" affordance on top of the
+  registry picker, and per-theme selection of glass level.
+- (f) **Exact organization membership**: add a `users/orgs` route to the
+  `gitnapse` core and the HTTP protocol (`GET /users/{login}/orgs`) plus the
+  client/bridge/frontend wiring, so the profile graph shows real organization
+  memberships instead of deriving connected orgs from public activity.
 
 ## 5. Known limitations
 

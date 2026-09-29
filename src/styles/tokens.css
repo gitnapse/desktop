@@ -85,7 +85,7 @@
 
     --layout-sidenav-width: 232px;
     --layout-topbar-height: 56px;
-    --layout-content-max: 1200px;
+    --layout-content-max: 1360px;
 
     --z-sidenav: 20;
     --z-topbar: 30;
@@ -106,6 +106,13 @@
     --status-err-subtle: rgb(239 106 114 / 0.1);
     --status-info-subtle: rgb(110 168 247 / 0.1);
 
+    --accent: #6ea8f7;
+    --accent-2: #5db26e;
+    --accent-3: #ef6a72;
+    --accent-soft: rgb(110 168 247 / 0.18);
+    --accent-2-soft: rgb(93 178 110 / 0.14);
+    --accent-3-soft: rgb(239 106 114 / 0.14);
+
     --bg: #000000;
     --surface: #111111;
     --surface-raised: #1a1a1a;
@@ -124,17 +131,17 @@
     --overlay-surface: rgb(17 17 17 / 0.82);
 
     --glass-tint-rgb: 17 17 17;
-    --glass-tint-alpha-thin: var(--alpha-55);
-    --glass-tint-alpha-regular: var(--alpha-66);
-    --glass-tint-alpha-thick: var(--alpha-78);
-    --glass-saturate-thin: 150%;
-    --glass-saturate-regular: 170%;
-    --glass-saturate-thick: 185%;
-    --glass-brightness: 1.04;
-    --glass-edge-thin: rgb(255 255 255 / 0.1);
-    --glass-edge-regular: rgb(255 255 255 / 0.14);
-    --glass-edge-thick: rgb(255 255 255 / 0.18);
-    --glass-highlight: rgb(255 255 255 / 0.16);
+    --glass-tint-alpha-thin: 0.16;
+    --glass-tint-alpha-regular: 0.26;
+    --glass-tint-alpha-thick: 0.4;
+    --glass-saturate-thin: 180%;
+    --glass-saturate-regular: 210%;
+    --glass-saturate-thick: 235%;
+    --glass-brightness: 1.06;
+    --glass-edge-thin: rgb(255 255 255 / 0.14);
+    --glass-edge-regular: rgb(255 255 255 / 0.2);
+    --glass-edge-thick: rgb(255 255 255 / 0.28);
+    --glass-highlight: rgb(255 255 255 / 0.22);
     --glass-shadow-thin: 0 1px 2px rgb(0 0 0 / 0.4);
     --glass-shadow-regular: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 28px rgb(0 0 0 / 0.5);
     --glass-shadow-thick: 0 2px 4px rgb(0 0 0 / 0.5), 0 24px 64px rgb(0 0 0 / 0.6);
@@ -162,6 +169,9 @@
     --glass-app-shadow: var(--glass-shadow-regular);
     --glass-app-radius: var(--glass-radius-regular);
     --glass-app-noise-opacity: var(--glass-noise-opacity-regular);
+    --glass-flat-alpha: 0.6;
+    --glass-flat-blur: 14px;
+    --glass-flat-saturate: 170%;
     --glass-transition: opacity var(--dur-fast) var(--ease-out),
       transform var(--dur-fast) var(--ease-out);
   }
@@ -182,6 +192,13 @@
     --status-err-subtle: rgb(179 35 42 / 0.1);
     --status-info-subtle: rgb(0 87 194 / 0.1);
 
+    --accent: #0057c2;
+    --accent-2: #2e6b3c;
+    --accent-3: #b3232a;
+    --accent-soft: rgb(0 87 194 / 0.16);
+    --accent-2-soft: rgb(46 107 60 / 0.12);
+    --accent-3-soft: rgb(179 35 42 / 0.12);
+
     --bg: #f5f2ec;
     --surface: #ffffff;
     --surface-raised: #efece5;
@@ -200,17 +217,19 @@
     --overlay-surface: rgb(255 255 255 / 0.86);
 
     --glass-tint-rgb: 255 255 255;
-    --glass-tint-alpha-thin: var(--alpha-62);
-    --glass-tint-alpha-regular: var(--alpha-74);
-    --glass-tint-alpha-thick: var(--alpha-86);
-    --glass-saturate-thin: 130%;
-    --glass-saturate-regular: 140%;
-    --glass-saturate-thick: 150%;
-    --glass-brightness: 1;
-    --glass-edge-thin: rgb(255 255 255 / 0.55);
-    --glass-edge-regular: rgb(255 255 255 / 0.65);
-    --glass-edge-thick: rgb(255 255 255 / 0.75);
-    --glass-highlight: rgb(255 255 255 / 0.8);
+    --glass-tint-alpha-thin: 0.42;
+    --glass-tint-alpha-regular: 0.52;
+    --glass-tint-alpha-thick: 0.64;
+    --glass-saturate-thin: 150%;
+    --glass-saturate-regular: 170%;
+    --glass-saturate-thick: 190%;
+    --glass-brightness: 1.02;
+    --glass-edge-thin: rgb(255 255 255 / 0.6);
+    --glass-edge-regular: rgb(255 255 255 / 0.7);
+    --glass-edge-thick: rgb(255 255 255 / 0.8);
+    --glass-highlight: rgb(255 255 255 / 0.9);
+    --glass-flat-alpha: 0.68;
+    --glass-flat-saturate: 155%;
     --glass-shadow-thin: 0 1px 2px rgb(26 24 21 / 0.1);
     --glass-shadow-regular: 0 1px 2px rgb(26 24 21 / 0.1), 0 8px 28px rgb(26 24 21 / 0.14);
     --glass-shadow-thick: 0 2px 4px rgb(26 24 21 / 0.12), 0 24px 64px rgb(26 24 21 / 0.22);

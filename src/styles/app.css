@@ -62,13 +62,13 @@
 
   .sidenav__link:hover {
     color: var(--ink);
-    background: color-mix(in oklab, var(--surface-raised) 60%, transparent);
+    background: color-mix(in oklab, var(--surface-raised) 45%, transparent);
   }
 
   .sidenav__link[aria-current="page"] {
     color: var(--ink-strong);
-    border-inline-start-color: var(--ink-strong);
-    background: var(--surface-raised);
+    border-inline-start-color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
   }
 
   .sidenav__index {
@@ -144,6 +144,29 @@
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+  }
+
+  .topbar__bell {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .topbar__bell-badge {
+    position: absolute;
+    inset-block-start: -4px;
+    inset-inline-end: -4px;
+    min-inline-size: 16px;
+    block-size: 16px;
+    padding-inline: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background: var(--status-info);
+    color: var(--bg);
+    font-size: 9px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
 
   .app__notice {

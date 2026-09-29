@@ -38,7 +38,11 @@ describe("parse helpers", () => {
   it("defaults to the first tab and sort", () => {
     expect(parseSearchTab(null)).toBe("repos");
     expect(parseSearchTab("users")).toBe("users");
+    expect(parseSearchTab("orgs")).toBe("orgs");
+    expect(parseSearchTab("code")).toBe("code");
+    expect(parseSearchTab("bogus")).toBe("repos");
     expect(parseUserTab("starred")).toBe("starred");
+    expect(parseUserTab("graph")).toBe("graph");
     expect(parseUserTab("bogus")).toBe("repos");
     expect(parseRepoSort(null)).toBe("updated");
     expect(parseRepoSort("pushed")).toBe("pushed");
@@ -69,6 +73,8 @@ describe("query building", () => {
     expect(buildSearchQuery({})).toBe("");
     expect(buildSearchQuery({ q: "glass ui" })).toBe("?q=glass+ui");
     expect(buildSearchQuery({ q: "glass", tab: "users" })).toBe("?q=glass&tab=users");
+    expect(buildSearchQuery({ q: "glass", tab: "orgs" })).toBe("?q=glass&tab=orgs");
+    expect(buildSearchQuery({ q: "glass", tab: "code" })).toBe("?q=glass&tab=code");
     expect(buildSearchQuery({ q: "glass", tab: "repos" })).toBe("?q=glass");
     expect(buildSearchQuery({ q: "glass", language: "Rust" })).toBe("?q=glass&language=Rust");
   });
@@ -76,6 +82,7 @@ describe("query building", () => {
   it("encodes user tab and sort state", () => {
     expect(buildUserQuery({})).toBe("");
     expect(buildUserQuery({ tab: "starred" })).toBe("?tab=starred");
+    expect(buildUserQuery({ tab: "graph" })).toBe("?tab=graph");
     expect(buildUserQuery({ tab: "repos", sort: "pushed" })).toBe("?sort=pushed");
     expect(buildUserQuery({ tab: "repos", sort: "updated" })).toBe("");
   });

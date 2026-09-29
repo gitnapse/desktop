@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Building2, Link2, MapPin, RefreshCw } from "lucide-react";
 import { Page } from "../Page";
 import {
@@ -16,6 +17,8 @@ import { EventList } from "../EventList";
 import { authQueryKey } from "../auth";
 import * as bridge from "../../lib/bridge";
 import { externalUrl, repoPath } from "../../lib/format";
+import { RepoGraph } from "../../features/repo/components/RepoGraph";
+import { buildUserGraph, type ConnectedOrg } from "../../features/repo/lib/graph";
 import {
   buildUserQuery,
   parseRepoSort,
@@ -27,6 +30,7 @@ import {
 export default function UserPage() {
   const { login = "" } = useParams();
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = parseUserTab(params.get("tab"));
   const sort = parseRepoSort(params.get("sort"));
 
@@ -51,6 +55,47 @@ export default function UserPage() {
     queryFn: () => bridge.userEvents(login, 1, 30),
     enabled: isSelf && tab === "activity",
   });
+
+  // Profile graph: connected orgs are derived from the user's public activity,
+  // then each org's repositories are loaded (all existing, cached endpoints).
+  const graphEvents = useQuery({
+    queryKey: ["user-events", login, 100],
+    queryFn: () => bridge.userEvents(login, 1, 100),
+    enabled: tab === "graph",
+  });
+  const orgLogins = useMemo(() => {
+    if (tab !== "graph") {
+      return [];
+    }
+    const counts = new Map<string, number>();
+    for (const event of graphEvents.data ?? []) {
+      const owner = event.repo.split("/")[0] ?? "";
+      if (owner.length > 0 && owner.toLowerCase() !== login.toLowerCase()) {
+        counts.set(owner, (counts.get(owner) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([owner]) => owner);
+  }, [tab, graphEvents.data, login]);
+  const orgRepoQueries = useQueries({
+    queries: orgLogins.map((org) => ({
+      queryKey: ["user-repos", org, "updated"],
+      queryFn: () => bridge.userRepos(org, "updated", 1, 30),
+      staleTime: 5 * 60_000,
+    })),
+  });
+  const orgReposKey = orgLogins
+    .map((org, index) => `${org}:${orgRepoQueries[index]?.dataUpdatedAt ?? 0}`)
+    .join(",");
+  const graphModel = useMemo(() => {
+    const orgs: ConnectedOrg[] = orgLogins.map((org, index) => ({
+      login: org,
+      repos: orgRepoQueries[index]?.data ?? [],
+    }));
+    return buildUserGraph({ login, repos: (repos.data ?? []).slice(0, 80), orgs });
+  }, [login, repos.data, orgReposKey]);
 
   const visibleRepos = repos.data ?? [];
 
@@ -131,18 +176,20 @@ export default function UserPage() {
         </dl>
       </header>
 
-      {isSelf ? (
-        <Tabs
-          ariaLabel="Profile sections"
-          value={tab}
-          items={userTabs}
-          onChange={(value) => {
-            setParams(buildUserQuery({ tab: parseUserTab(value), sort }));
-          }}
-        />
-      ) : null}
+      <Tabs
+        ariaLabel="Profile sections"
+        value={tab}
+        items={
+          isSelf
+            ? userTabs
+            : userTabs.filter((item) => item.value === "repos" || item.value === "graph")
+        }
+        onChange={(value) => {
+          setParams(buildUserQuery({ tab: parseUserTab(value), sort }));
+        }}
+      />
 
-      {tab === "repos" || !isSelf ? (
+      {tab === "repos" || (!isSelf && tab !== "graph") ? (
         <>
           <div className="searchfilters">
             <div className="searchfilters__select">
@@ -185,6 +232,29 @@ export default function UserPage() {
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {tab === "graph" ? (
+        <RepoGraph
+          model={graphModel}
+          loading={repos.isPending || graphEvents.isPending || orgRepoQueries.some((q) => q.isPending)}
+          error={repos.error ?? graphEvents.error ?? null}
+          onRetry={() => {
+            void repos.refetch();
+            void graphEvents.refetch();
+            for (const query of orgRepoQueries) {
+              void query.refetch();
+            }
+          }}
+          onOpenNode={(node) => {
+            if (node.kind === "repo") {
+              navigate(`/repos/${node.path}`);
+            } else if (node.kind === "org") {
+              navigate(`/users/${node.label}`);
+            }
+          }}
+          emptyLabel="[NO CONNECTIONS]"
+        />
       ) : null}
 
       {isSelf && tab === "starred" ? (

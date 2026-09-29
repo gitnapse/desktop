@@ -32,6 +32,10 @@ export const router = createHashRouter([
             lazy: async () => ({ Component: (await import("./pages/repo/CodeTab")).default }),
           },
           {
+            path: "graph",
+            lazy: async () => ({ Component: (await import("./pages/repo/GraphTab")).default }),
+          },
+          {
             path: "commits",
             lazy: async () => ({ Component: (await import("./pages/repo/CommitsTab")).default }),
           },
@@ -64,6 +68,10 @@ export const router = createHashRouter([
       {
         path: "users/:login",
         lazy: async () => ({ Component: (await import("./pages/UserPage")).default }),
+      },
+      {
+        path: "notifications",
+        lazy: async () => ({ Component: (await import("./pages/NotificationsPage")).default }),
       },
       {
         path: "settings",

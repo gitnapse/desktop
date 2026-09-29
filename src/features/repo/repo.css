@@ -1251,3 +1251,151 @@
     }
   }
 }
+
+@layer features {
+  .commitdetail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-block-start: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--glass-app-radius);
+    min-inline-size: 0;
+  }
+
+  .commitdetail__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    padding-block-end: var(--space-sm);
+    border-block-end: var(--border-width) solid var(--line);
+  }
+
+  .commitdetail__sha {
+    color: var(--ink-strong);
+    letter-spacing: var(--tracking-heading);
+  }
+}
+
+@layer features {
+  .repograph {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    min-inline-size: 0;
+  }
+
+  .repograph__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-md);
+  }
+
+  .repograph__search {
+    flex: 1;
+    min-inline-size: 160px;
+    max-inline-size: 300px;
+  }
+
+  .repograph__toggle {
+    padding-block-end: var(--space-xs);
+  }
+
+  .repograph__size {
+    min-inline-size: 150px;
+    padding-block-end: var(--space-xs);
+  }
+
+  .repograph__buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-inline-start: auto;
+    padding-block-end: var(--space-xs);
+  }
+
+  .repograph__stage {
+    position: relative;
+    block-size: clamp(360px, 62vh, 760px);
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--surface-raised) 70%, transparent), transparent 70%),
+      color-mix(in oklab, var(--surface) 55%, transparent);
+  }
+
+  .repograph__canvas {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .repograph__tooltip {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-inline-size: 280px;
+    padding: var(--space-xs) var(--space-sm);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-sm);
+    background: var(--overlay-surface);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+
+  .repograph__tooltip .t-label {
+    color: var(--ink-muted);
+  }
+
+  .repograph__error,
+  .repograph__empty {
+    position: absolute;
+    inset-block-start: var(--space-md);
+    inset-inline-start: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .repograph__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .repograph__stats {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--ink-muted);
+  }
+
+  .repograph__categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+  }
+
+  .repograph__category {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .repograph__dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+  }
+}
+

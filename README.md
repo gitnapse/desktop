@@ -87,9 +87,58 @@ Frontend (browser preview with mocked commands, no Rust needed):
 
 ```sh
 npm install
-npm run dev            # http://localhost:1420
-npm run tauri dev      # real desktop window (needs system packages)
-npm run tauri build    # bundle
+npm run dev            # http://localhost:1420 — MOCKS, no real GitHub data
+```
+
+### Run with real GitHub data
+
+The simplest path (Linux; works even without a system webkit — it bootstraps a
+private `webkit2gtk-4.1` under `~/.cache` and, if the GitHub CLI is signed in,
+reuses its token):
+
+```sh
+./run.sh
+```
+
+Flags: `--build` (release bundle), `--gpu` (full WebKit acceleration),
+`--compat` (software rendering fallback), `--no-server`,
+`--no-github-token`, `--help`. On Arch, `sudo pacman -S webkit2gtk-4.1` gives
+the native path instead of the private bootstrap.
+
+Performance: the first run downloads webkit (~40 MB) and compiles the Rust
+workspace (minutes); later runs reuse both and start in seconds. By default it
+disables only WebKit's DMA-BUF renderer, which avoids a Wayland protocol crash
+while keeping accelerated compositing. Use `--gpu` for full acceleration or
+`--compat` if you see a blank frame. Ctrl+C shuts down the app, its sidecar and
+the dev server.
+
+The real path is `desktop → bridge → gitnapse-server (HTTP) → gitnapse core`.
+Every remote command **ensures the managed `gitnapse-server` is running**
+(spawns and health-checks it) before it talks to GitHub, and the app owns the
+sidecar lifecycle — you do not start a server by hand.
+
+```sh
+npm run server:dev     # builds ../api and stages gitnapse-server next to the app
+npm run tauri:dev      # real desktop window against live GitHub data
+```
+
+`server:dev` (`scripts/dev-server.sh`) puts the binary where the bridge looks
+first (sibling of the executable). Alternatively set `GITNAPSE_SERVER_BIN=/path/to/gitnapse-server`
+or have `gitnapse-server` on `PATH`.
+
+Authentication (single source of truth = the core secure store in
+`~/.config/GitNapse`):
+
+- paste a personal access token in **Settings → Authentication**, or
+- run the OAuth device flow there, or
+- export `GITHUB_TOKEN` in the shell that launches the app (env token).
+
+The app activates the token on the running server automatically (and recycles
+it after a device-flow sign-in), so remote data starts working without a manual
+restart.
+
+```sh
+npm run tauri:build    # release bundle (stages the release server too)
 ```
 
 ### Sidecar packaging (opt-in)

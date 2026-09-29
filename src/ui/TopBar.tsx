@@ -7,6 +7,7 @@ export interface TopBarProps {
   onOpenPalette: () => void;
   onSearch: (query: string) => void;
   auth?: ReactNode;
+  notifications?: ReactNode;
   paletteShortcut?: string;
 }
 
@@ -14,6 +15,7 @@ export function TopBar({
   onOpenPalette,
   onSearch,
   auth,
+  notifications,
   paletteShortcut = "⌘K",
 }: TopBarProps) {
   const [query, setQuery] = useState("");
@@ -35,13 +37,14 @@ export function TopBar({
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search repositories, users, code"
+          placeholder="Search repositories, users, organizations, code"
           aria-label="Search GitHub"
           spellCheck={false}
         />
       </form>
       <div className="topbar__spacer" />
       <div className="topbar__actions">
+        {notifications}
         {auth}
         <Button variant="technical" icon={CommandIcon} onClick={onOpenPalette}>
           Commands
