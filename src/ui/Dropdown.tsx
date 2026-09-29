@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useId,
@@ -29,6 +30,11 @@ export function Dropdown({ trigger, children, align = "start", label }: Dropdown
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuId = useId();
 
+  const close = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -43,8 +49,7 @@ export function Dropdown({ trigger, children, align = "start", label }: Dropdown
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
+        close();
       }
     }
 
@@ -57,7 +62,7 @@ export function Dropdown({ trigger, children, align = "start", label }: Dropdown
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, close]);
 
   return (
     <div className="dropdown" ref={wrapperRef}>
@@ -79,7 +84,7 @@ export function Dropdown({ trigger, children, align = "start", label }: Dropdown
           role="menu"
           className={`dropdown__menu dropdown__menu--${align} glass glass--regular`}
         >
-          <DropdownContext.Provider value={{ close: () => setOpen(false) }}>
+          <DropdownContext.Provider value={{ close }}>
             {children}
           </DropdownContext.Provider>
         </div>

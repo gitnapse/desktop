@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { FolderGit2, Home, Search, Settings, User } from "lucide-react";
+import { Bell, FolderGit2, Home, Search, Settings, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Button,
@@ -14,7 +14,9 @@ import {
 } from "../ui";
 import { AuthChip } from "./AuthChip";
 import { CloneDialog } from "./CloneDialog";
+import { NotificationsBell } from "./NotificationsBell";
 import { useTheme } from "./ThemeProvider";
+import { useServerAutoStart } from "./server";
 import { authQueryKey, useSignOut } from "./auth";
 import * as bridge from "../lib/bridge";
 
@@ -95,8 +97,15 @@ export function Shell() {
   const [lookup, setLookup] = useState<"user" | "repo" | null>(null);
   const navigate = useNavigate();
   const { resolvedTheme, toggleTheme } = useTheme();
+  useServerAutoStart();
   const signOut = useSignOut();
   const auth = useQuery({ queryKey: authQueryKey, queryFn: bridge.authStatus });
+  const account = useQuery({
+    queryKey: ["api-user"],
+    queryFn: bridge.apiUser,
+    enabled: Boolean(auth.data?.has_token),
+    retry: false,
+  });
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -108,6 +117,23 @@ export function Shell() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const navItems = useMemo<Array<{ to: string; label: string; icon: typeof Home; end?: boolean }>>(
+    () => {
+      const items: Array<{ to: string; label: string; icon: typeof Home; end?: boolean }> = [
+        { to: "/", label: "Home", icon: Home, end: true },
+        { to: "/search", label: "Search", icon: Search },
+        { to: "/local", label: "Local", icon: FolderGit2 },
+        { to: "/notifications", label: "Inbox", icon: Bell },
+      ];
+      if (account.data?.login) {
+        items.push({ to: `/users/${account.data.login}`, label: "Profile", icon: User });
+      }
+      items.push({ to: "/settings", label: "Settings", icon: Settings });
+      return items;
+    },
+    [account.data?.login],
+  );
 
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [
@@ -138,6 +164,13 @@ export function Shell() {
         hint: "G L",
         keywords: ["clone", "git", "working tree"],
         run: () => navigate("/local"),
+      },
+      {
+        id: "notifications",
+        label: "Open notifications",
+        hint: "G N",
+        keywords: ["inbox", "unread", "mentions"],
+        run: () => navigate("/notifications"),
       },
       {
         id: "settings",
@@ -210,13 +243,7 @@ export function Shell() {
   return (
     <div className="app">
       <SideNav
-        items={[
-          { to: "/", label: "Home", icon: Home, end: true },
-          { to: "/search", label: "Search", icon: Search },
-          { to: "/local", label: "Local", icon: FolderGit2 },
-          { to: "/users/xscriptor", label: "Profile", icon: User },
-          { to: "/settings", label: "Settings", icon: Settings },
-        ]}
+        items={navItems}
         brand={
           <>
             <span className="sidenav__wordmark">GitNapse</span>
@@ -234,6 +261,7 @@ export function Shell() {
         <TopBar
           onOpenPalette={() => setPaletteOpen(true)}
           onSearch={(query) => navigate(`/search?q=${encodeURIComponent(query)}`)}
+          notifications={<NotificationsBell />}
           auth={<AuthChip />}
         />
         {preview ? (

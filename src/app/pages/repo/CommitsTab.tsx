@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GitCompare } from "lucide-react";
 import { Select } from "../../../ui";
 import * as bridge from "../../../lib/bridge";
+import { CommitDetail } from "../../../features/repo/components/CommitDetail";
 import { CommitRow } from "../../../features/repo/components/CommitRow";
 import { QueryFeedback } from "../../../features/repo/components/QueryFeedback";
 import { commitToRow } from "../../../features/repo/lib/commit";
@@ -13,6 +15,11 @@ export default function CommitsTab() {
   const fullName = `${owner}/${name}`;
   const [params, setParams] = useSearchParams();
   const ref = parseRefParam(params.get("ref"));
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelected(null);
+  }, [ref]);
 
   const repo = useQuery({
     queryKey: ["repo", fullName],
@@ -36,6 +43,14 @@ export default function CommitsTab() {
     { value: "", label: "Default branch" },
     ...(branches.data ?? []).map((branch) => ({ value: branch, label: branch })),
   ];
+
+  const list = commits.data ?? [];
+  const selectedIndex = selected ? list.findIndex((commit) => commit.sha === selected) : -1;
+  const selectedCommit = selectedIndex >= 0 ? list[selectedIndex] : null;
+  const selectedBase =
+    selectedCommit && selectedIndex >= 0 && selectedIndex + 1 < list.length
+      ? list[selectedIndex + 1]?.sha ?? null
+      : null;
 
   return (
     <section className="rpanel glass-flat">
@@ -79,9 +94,19 @@ export default function CommitsTab() {
                 avatar
                 repoFullName={fullName}
                 compareFrom={compareFrom}
+                selected={selected === commit.sha}
+                onSelect={() => setSelected((current) => (current === commit.sha ? null : commit.sha))}
               />
             ))}
           </ul>
+        ) : null}
+        {selectedCommit ? (
+          <CommitDetail
+            repo={fullName}
+            base={selectedBase}
+            head={selectedCommit.sha}
+            shortSha={selectedCommit.sha.slice(0, 7)}
+          />
         ) : null}
       </div>
     </section>

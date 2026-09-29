@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { RefreshCw, Search as SearchIcon } from "lucide-react";
 import { Page } from "../Page";
 import {
@@ -14,6 +14,8 @@ import {
 } from "../../ui";
 import * as bridge from "../../lib/bridge";
 import { repoPath } from "../../lib/format";
+import { CodeResultRow } from "../../features/repo/components/CodeResultRow";
+import "../../features/repo/repo.css";
 import {
   buildSearchQuery,
   filterReposByLanguage,
@@ -24,6 +26,7 @@ import {
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const query = params.get("q") ?? "";
   const tab = parseSearchTab(params.get("tab"));
   const language = params.get("language") ?? "";
@@ -66,6 +69,16 @@ export default function SearchPage() {
     queryFn: () => bridge.searchUsers(query, 1, 30),
     enabled: query.length > 0 && tab === "users",
   });
+  const orgs = useQuery({
+    queryKey: ["search-users", query, "org"],
+    queryFn: () => bridge.searchUsers(`${query} type:org`, 1, 30),
+    enabled: query.length > 0 && tab === "orgs",
+  });
+  const code = useQuery({
+    queryKey: ["search-code", query],
+    queryFn: () => bridge.searchCode(query, 1, 30),
+    enabled: query.length > 0 && tab === "code",
+  });
 
   const languages = repoLanguages(repos.data ?? []);
   const activeLanguage = language.length > 0 && languages.includes(language) ? language : "";
@@ -86,7 +99,7 @@ export default function SearchPage() {
           type="search"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Repositories by name, description or language"
+          placeholder="Search repositories, users, organizations or code"
           aria-label="Search repositories"
           spellCheck={false}
         />
@@ -199,6 +212,66 @@ export default function SearchPage() {
                 />
               ))}
             </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {query.length > 0 && tab === "orgs" ? (
+        <>
+          {orgs.isPending ? <StatusLine kind="loading" /> : null}
+          {orgs.isError ? (
+            <div className="settings-row">
+              <StatusLine kind="error" message={orgs.error.message} />
+              <Button variant="technical" icon={RefreshCw} onClick={() => void orgs.refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : null}
+          {orgs.isSuccess && orgs.data.length === 0 ? (
+            <EmptyState title="NO ORGANIZATIONS" hint={`No organization matched “${query}”.`} />
+          ) : null}
+          {orgs.isSuccess && orgs.data.length > 0 ? (
+            <div className="cardgrid cardgrid--users">
+              {orgs.data.map((org) => (
+                <UserCard
+                  key={org.login}
+                  user={org}
+                  meta={`${org.public_repos} public repos`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {query.length > 0 && tab === "code" ? (
+        <>
+          {code.isPending ? <StatusLine kind="loading" /> : null}
+          {code.isError ? (
+            <div className="settings-row">
+              <StatusLine kind="error" message={code.error.message} />
+              <Button variant="technical" icon={RefreshCw} onClick={() => void code.refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : null}
+          {code.isSuccess ? (
+            <>
+              <p className="t-label searchfilters__count">{`${code.data.length} RESULT${code.data.length === 1 ? "" : "S"}`}</p>
+              {code.data.length === 0 ? (
+                <EmptyState title="NO CODE" hint={`No files matched “${query}”.`} />
+              ) : (
+                <ul className="rows">
+                  {code.data.map((result) => (
+                    <CodeResultRow
+                      key={`${result.repo}:${result.path}:${result.sha}`}
+                      result={result}
+                      onOpenRepo={(repo) => navigate(`/repos/${repo}`)}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
           ) : null}
         </>
       ) : null}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Avatar, Markdown } from "../../../ui";
@@ -6,6 +7,7 @@ import type { ContentDto } from "../../../lib/types";
 import { commitToRow } from "../../../features/repo/lib/commit";
 import { decodeContent } from "../../../features/repo/lib/content";
 import { parseRefParam } from "../../../features/repo/lib/query";
+import { CommitDetail } from "../../../features/repo/components/CommitDetail";
 import { CommitRow } from "../../../features/repo/components/CommitRow";
 import { EmptyPanel } from "../../../features/repo/components/EmptyPanel";
 import { QueryFeedback } from "../../../features/repo/components/QueryFeedback";
@@ -40,6 +42,11 @@ export default function OverviewTab() {
   const fullName = `${owner}/${name}`;
   const [params] = useSearchParams();
   const ref = parseRefParam(params.get("ref"));
+  const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelected(null);
+  }, [ref]);
 
   const repo = useQuery({
     queryKey: ["repo", fullName],
@@ -72,6 +79,13 @@ export default function OverviewTab() {
   const languageTotal = languageEntries.reduce((sum, [, bytes]) => sum + bytes, 0);
   const latestRelease = releases.data?.[0];
   const commitsSearch = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  const commitList = commits.data ?? [];
+  const selectedIndex = selected ? commitList.findIndex((commit) => commit.sha === selected) : -1;
+  const selectedCommit = selectedIndex >= 0 ? commitList[selectedIndex] : null;
+  const selectedBase =
+    selectedCommit && selectedIndex + 1 < commitList.length
+      ? commitList[selectedIndex + 1]?.sha ?? null
+      : null;
 
   return (
     <div className="repo-overview">
@@ -88,7 +102,12 @@ export default function OverviewTab() {
           {readme.isSuccess && readme.data ? (
             <>
               <span className="t-label repo-overview__readme-path">{readme.data.path}</span>
-              <Markdown source={readme.data.text} />
+              <Markdown
+                source={readme.data.text}
+                repo={fullName}
+                gitRef={ref}
+                basePath={readme.data.path}
+              />
             </>
           ) : null}
         </SectionPanel>
@@ -120,9 +139,21 @@ export default function OverviewTab() {
                   compact
                   repoFullName={fullName}
                   compareFrom={ref ?? repo.data?.default_branch ?? null}
+                  selected={selected === commit.sha}
+                  onSelect={() =>
+                    setSelected((current) => (current === commit.sha ? null : commit.sha))
+                  }
                 />
               ))}
             </ul>
+          ) : null}
+          {selectedCommit ? (
+            <CommitDetail
+              repo={fullName}
+              base={selectedBase}
+              head={selectedCommit.sha}
+              shortSha={selectedCommit.sha.slice(0, 7)}
+            />
           ) : null}
         </SectionPanel>
       </div>

@@ -1,0 +1,112 @@
+@layer features {
+  .notifications__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .notifications__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .nrows {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-inline-size: 0;
+  }
+
+  .nrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: var(--space-sm) 0;
+    border-block-end: var(--border-width) solid var(--line);
+    color: var(--ink-muted);
+  }
+
+  .nrows > .nrow:last-child {
+    border-block-end: none;
+  }
+
+  .nrow__dot {
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    flex-shrink: 0;
+  }
+
+  .nrow__dot[data-visible="true"] {
+    background: var(--ink-strong);
+  }
+
+  .nrow__grow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 1;
+    min-inline-size: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  a.nrow__grow {
+    cursor: pointer;
+  }
+
+  a.nrow__grow:hover {
+    color: var(--ink-strong);
+  }
+
+  .nrow__main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .nrow__title {
+    color: var(--ink);
+    font-size: var(--body-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nrow[data-unread="true"] .nrow__title {
+    color: var(--ink-strong);
+  }
+
+  .nrow__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    color: var(--ink-muted);
+    font-family: var(--font-data);
+    font-size: var(--caption);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nrow__trailing {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-inline-start: auto;
+    flex-shrink: 0;
+  }
+}

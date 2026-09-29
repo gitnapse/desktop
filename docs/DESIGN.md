@@ -96,17 +96,27 @@ Levels are semantic aliases; a fourth level would signal a design problem.
 | Token family | thin | regular | thick |
 |---|---|---|---|
 | Blur | 12 px | 24 px | 32 px |
-| Saturate (dark / light) | 150 % / 130 % | 170 % / 140 % | 185 % / 150 % |
-| Brightness (dark / light) | 1.04 / 1 | 1.04 / 1 | 1.04 / 1 |
-| Tint alpha (dark) | 0.55 | 0.66 | 0.78 |
-| Tint alpha (light) | 0.62 | 0.74 | 0.86 |
-| Edge (dark) | `white/0.10` | `white/0.14` | `white/0.18` |
-| Edge (light) | `white/0.55` | `white/0.65` | `white/0.75` |
-| Highlight | `white/0.16` dark, `white/0.8` light | shared | shared |
+| Saturate (dark / light) | 180 % / 150 % | 210 % / 170 % | 235 % / 190 % |
+| Brightness (dark / light) | 1.06 / 1.02 | 1.06 / 1.02 | 1.06 / 1.02 |
+| Tint alpha (dark) | 0.16 | 0.26 | 0.40 |
+| Tint alpha (light) | 0.42 | 0.52 | 0.64 |
+| Edge (dark) | `white/0.14` | `white/0.20` | `white/0.28` |
+| Edge (light) | `white/0.60` | `white/0.70` | `white/0.80` |
+| Highlight | `white/0.22` dark, `white/0.90` light | shared | shared |
 | Shadow (dark) | `0 1px 2px black/0.40` | `0 1px 2px black/0.45, 0 8px 28px black/0.50` | `0 2px 4px black/0.50, 0 24px 64px black/0.60` |
 | Shadow (light) | `0 1px 2px #1a1815/0.10` | `…, 0 8px 28px #1a1815/0.14` | `…, 0 24px 64px #1a1815/0.22` |
 | Radius | 12 px | 12 px | 16 px |
 | Noise opacity | 0.02 | 0.03 | 0.04 |
+| `glass-flat` tint alpha (dark / light) | shared: 0.60 / 0.68 | shared | shared |
+| `glass-flat` blur / saturate | none by default (translucent tint); 16 px / 170 % only at `thick` | shared | shared |
+
+The tint alphas are deliberately translucent because the app canvas is now a
+themed **aurora** (four blurred accent blobs, `body::before` in `base.css`) that
+the glass actually refracts; the earlier near-opaque alphas made blur
+invisible over a flat black fill. `saturate()` is what keeps the aurora hue
+visible through the neutral tint. Text safety comes from the aurora being dark
+(low-luminance blobs over `--bg`, accents exposed as `--accent*-soft`) plus the
+`glass-flat`/scrim fills, re-measured in §6.
 
 The runtime channel is `--glass-*` custom properties; `--glass-{blur,tint,edge,
 saturate,shadow,radius,noise-opacity}` are the per-element aliases, `--glass-app-*`
@@ -168,9 +178,16 @@ view instead.
    14/16/20; icons inherit `currentColor`.
 5. **Motion is subtractive.** 150–240 ms ease-out on opacity/transform/color;
    `backdrop-filter` is never animated. Progress animations are transform-only.
-6. **Glass budget.** Max 3 blurred surfaces per viewport (SideNav + TopBar +
-   content = 3; overlays are exclusive and replace the count). Panels inside
-   panels use `glass-flat` (translucent fill, no second blur) — no glass-on-glass.
+6. **Aurora canvas + translucent surfaces.** The app canvas is a themed aurora
+   (`body::before`: four static, soft accent gradients — no blur filter, no
+   animation, no `will-change`) so translucent surfaces have colour behind them
+   without repainting while idle. By default no scrolling surface blurs: content
+   panels (`glass-flat`) are a translucent tint + edge + hairline shadow, and the
+   sticky shell bars are an opaque-translucent fill — re-blurring a sticky bar on
+   every scroll frame is the main jank source on WebKitGTK. Real blur is kept
+   only on transient overlays (dropdown, modal, sheet, palette). The optional
+   `thick` glass level re-enables bar and panel blur. Nested/interior surfaces
+   always drop the second pass (no glass-on-glass).
 7. **Radius grammar.** Cards/panels 12 px (thick 16 px max), buttons pill 999 px
    or technical 6 px, inputs 6 px.
 8. **The tint does the contrast work.** Alphas are set from the measured
@@ -194,13 +211,13 @@ strokes which the blur averages toward the busy mix. Text colors: dark
 
 | Surface | Level | Contrast, worst case (dark / light) | Cost class | Fallback | Platform status |
 |---|---|---|---|---|---|
-| SideNav | thin | 11.87 / 13.94 (muted 5.11 / 5.09) | low (12 px, 232×100 vh) | opaque tint 0.95, `@supports` gate, reduced-transparency | not run — no browser in build container; F5 matrix Chromium/WebKitGTK/Firefox |
-| TopBar | thin | 11.87 / 13.94 (muted 5.11 / 5.09) | low (12 px, full-width bar) | same as SideNav | same |
-| Panel (cards, `data-glass` app level) | regular(24/0.66) / thin / thick | regular 12.83 / 15.00; thin 11.87 / 13.94; thick 13.76 / 16.10 (muted ≥ 5.09) | medium by default; user-selectable thin (low) or thick (high) | `@supports` gate; reduced-transparency and contrast-more collapse to solid `--surface` | same |
-| Dropdown menu / popover | regular | 12.83 / 15.00 (muted 5.52 / 5.47) | medium (24 px, small area, transient) | opaque tint; closes on Escape/outside click | same |
-| Modal | thick | 13.76 / 16.10 (muted 5.92 / 5.87); scrim first | high (32 px, exclusive) | scrim alone is readable without `::backdrop` blur (no blur used on the backdrop at all) | same |
-| Sheet | thick | 13.76 / 16.10 | high (32 px, exclusive) | as Modal | same |
-| Command palette (⌘K) | thick | 13.76 / 16.10 | high (32 px, exclusive; the one surface worth the budget) | as Modal | same |
+| SideNav | thin | 13.47 / 13.90 (muted 5.78 / 5.08) | low (12 px, 232×100 vh) | opaque tint 0.95, `@supports` gate, reduced-transparency | not run — no browser in build container; F5 matrix Chromium/WebKitGTK/Firefox |
+| TopBar | thin | 13.47 / 13.90 (muted 5.78 / 5.08) | low (12 px, full-width bar) | same as SideNav | same |
+| Panel (cards, `data-glass` app level) | regular(24/0.26) / thin / thick | regular 13.69 / 14.75; thin 13.47 / 13.90; thick 14.17 / 15.20 (muted ≥ 5.08) | medium by default; user-selectable thin (low) or thick (high) | `@supports` gate; reduced-transparency and contrast-more collapse to solid `--surface` | same |
+| Dropdown menu / popover | regular | 13.69 / 14.75 (muted 5.88 / 5.39) | medium (24 px, small area, transient) | opaque tint; closes on Escape/outside click | same |
+| Modal | thick | 14.17 / 15.20 (muted 6.08 / 5.57); scrim first | high (32 px, exclusive) | scrim alone is readable without `::backdrop` blur (no blur used on the backdrop at all) | same |
+| Sheet | thick | 14.17 / 15.20 | high (32 px, exclusive) | as Modal | same |
+| Command palette (⌘K) | thick | 14.17 / 15.20 | high (32 px, exclusive; the one surface worth the budget) | as Modal | same |
 
 Shared audit notes per xglass ref 04/05:
 
@@ -280,15 +297,16 @@ mix); same `contrast.ts` contract as §6. Asserted in
 
 | Text | Worst case dark | Worst case light | Threshold |
 |---|---|---|---|
-| Body ink (`--ink` #e8e8e8 / #1a1a1a) | 14.06 | 15.68 | ≥ 4.5 |
-| Muted ink (`--ink-muted` #999 / #635f58) | 6.05 | 5.72 | ≥ 4.5 |
+| Body ink (`--ink` #e8e8e8 / #1a1a1a) | 14.60 | 15.20 | ≥ 4.5 |
+| Muted ink (`--ink-muted` #999 / #635f58) | 6.27 | 5.57 | ≥ 4.5 |
 | Hairline (`--line` #222 / #e6e1d7) | decorative separator, not a functional boundary | — | — |
 | Interactive boundary (cards, inputs) | `--control-line` 3.28–3.67 | same as §6 | ≥ 3 |
 
 Fallbacks are inherited from `glass.css`: reduced transparency, `prefers-
 contrast: more`, `forced-colors`, and print all collapse `.glass-flat` to a
-solid `--surface`. Cost class: low (no backdrop pass). Platform status: not
-run in this container (same as §6.1; F5 matrix).
+solid `--surface`. Cost class: low (no backdrop pass); the optional `thick`
+glass level adds a single 16 px pass. Platform status: not run in this container
+(same as §6.1; F5 matrix).
 
 ### 9.3 Typography and color in wave A
 
@@ -320,5 +338,105 @@ state (`StatusDot`), file-change kinds, and highlight.js token classes inside
 `CodeView` (comments muted-italic, keywords ink-strong, strings/numbers/titles
 one status hue each; surrounding code text stays `--ink`). Typography per view:
 Doto 36 (repo stat tiles), Grotesk 24/16, Mono 14/11/12 — within the §4 budget.
+
+## 11. F5 frontend wave — themes, inbox, code search, inline diffs
+
+No new blurred surface was introduced. The persistent budget stays **SideNav
+(thin) + TopBar (thin) = 2**; the notifications bell lives in the TopBar and the
+theme grid is `glass-flat`. The `ThemePicker` swatches are flat (theme-owned
+colors, no backdrop pass).
+
+### 11.1 Registry theme engine (`src/lib/themes.ts`)
+
+The `gitnapse/themes` registry is the source of truth. A theme provides
+`background`, `foreground`, `accent`, `accent2`, `accent3` and optional
+`selection_fg`; the app derives the rest with `color-mix` equivalents in sRGB:
+
+| Token group | Derivation |
+|---|---|
+| `--bg`, `--ink` | theme background / foreground verbatim |
+| `--surface`, `--surface-raised` | `mix(bg, fg, 7%/12% dark · 5%/8% light)` |
+| `--line`, `--line-visible` | `mix(bg, fg, 16%/24% dark · 11%/16% light)` |
+| `--ink-strong` / `--ink-muted` / `--ink-faint` | fg toward its extreme, then `mix` toward bg at 42%/60% |
+| `--control-line` | `mix(bg, fg, 50%)`, lifted to ≥ 3:1 |
+| status (`ok`,`warn`,`err`,`info`) | hue-classified accents (see below) |
+| `--focus-ring`, `--selection-bg` | `accent`, lifted to ≥ 3:1 |
+| `--selection-ink` | `selection_fg`, else best-contrast against accent |
+| `--glass-tint-rgb`, `--scrim`, `--overlay-surface`, `--texture-ink` | from surface/bg/fg and the theme mode |
+
+**Smart distribution ("color is an event").** Each accent is classified by hue
+(saturation ≥ 0.12): red→`err`, green→`ok`, blue/cyan→`info`, warm→`warn`.
+Unfilled roles fall back to the mode's built-in semantic colors, so a
+monochrome theme (Berlin, London) keeps meaningful status colors instead of gray
+errors. Every derived status and muted ink is then raised with `ensureContrast`
+to ≥ 4.5:1 against the theme's raised surface, asserted in `themes.test.ts`.
+
+Application order: `data-theme` (dark/light from the theme mode) selects the
+glass alpha ramp from `tokens.css`; the color overrides are written as inline
+custom properties on the root. The resolved token map is cached in
+`localStorage` (`gitnapse.themeTokens`) and the `index.html` boot script applies
+it before first paint, so there is no flash of the default palette.
+
+Audit: theme surfaces inherit the glass recipe from `tokens.css`; the only
+theme-specific guarantee is the status/ink contrast above, verified
+mathematically per theme (dark and light registry entries) in
+`src/lib/themes.test.ts`.
+
+### 11.2 New content surfaces (flat)
+
+| Surface | Material | Contrast basis |
+|---|---|---|
+| Notifications rows (`nrow`) | flat, hairline separators | inherits §9.2 body/muted ink audit; unread dot is `--ink-strong`; reason badges carry status ink |
+| Code search rows (`datarow--code`) | flat, in `.rows` | inherits §10 datarow audit |
+| Inline commit diff (`commitdetail`) | `glass-flat` panel + `DiffView` | inherits §10 code/diff audit |
+| Theme swatches (`themecard`) | flat, theme-owned colors | swatch text is the theme's own fg on its bg (registry guarantees ≥ 4.5); card chrome uses `--line`/`--control-line` |
+| README/markdown HTML (`.markdown`) | flat prose inside `glass-flat` | inherits §9.2; images capped to the container width |
+| Repository graph (`repograph`) | `glass-flat` panel + canvas stage | canvas: node colors are theme accents (data encoding), labels/edges use `--ink-muted`/`--ink-faint` over the flat stage |
+
+### 11.3 Behavior notes
+
+- Notifications and the bell share the `["notifications"]` query key, so the
+  badge and the inbox stay in sync; marking read invalidates it.
+- Inline commit diffs are parent-relative within the ordered history
+  (`compare_branches` base = next commit, head = selected); the oldest commit
+  shows "INITIAL COMMIT" and makes no request.
+- `prefers-reduced-transparency`, `prefers-contrast`, `forced-colors` and print
+  continue to collapse flat panels to solid `--surface` via `glass.css`; custom
+  theme tokens are color-only and do not touch the fallback alphas.
+
+### 11.4 Markdown HTML and the graph
+
+**Markdown.** Raw HTML from content is rendered (like GitHub) instead of being
+escaped, then sanitized by DOMPurify with an explicit structural allowlist
+(GFM task-list checkboxes included; `script`/`style`/`iframe`/`form`/`svg` and
+`style`/event attributes removed). URL resolution for README images and links is
+pure and unit-tested (`markdown-urls.ts`); it never runs user input through
+`innerHTML` without sanitization. No new blurred surface.
+
+**Graph.** The repository graph is a flat panel with an HTML canvas stage; node
+colors are the active theme's accents read from CSS custom properties (and
+re-read on `data-theme`/`data-theme-name` changes), used as data encoding for
+top-level folder grouping. Edges and labels use the muted/faint ink tokens. The
+canvas is not a backdrop surface, so it does not consume the glass budget. Node
+count is capped (directories first) so large repositories stay interactive.
+
+## 12. Client cache and the token boundary
+
+The desktop persists the React Query cache to IndexedDB (`queryPersist.ts`) so
+navigation and restarts reuse GitHub data instead of spending API rate limit:
+5-minute fresh window, 7-day retention, throttled writes, in-memory fallback.
+This is presentation-layer data only: no glass surface is affected.
+
+The cache is governed by an **allowlist** (`shouldPersistQueryKey`) of public
+navigation query roots (repo, tree, file, commits, branches, compare, issues,
+pull requests, checks, releases, search, profiles, events, notifications,
+theme registry). Queries for authentication (`auth-status`, `api-auth-status`,
+`api-user`), the server lifecycle, rate limit, device flow and local git are
+excluded, and a defensive regex rejects credential-shaped roots. The GitHub
+token is never returned across the bridge and only ever lives in the core
+secure store (`~/.config/GitNapse`); it cannot reach IndexedDB. Sign-out and
+Settings → Cache call `clearPersistedCache()`. `queryPersist.test.ts` pins the
+guarantee.
+
 
 

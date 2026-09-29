@@ -27,6 +27,19 @@
     background: transparent;
   }
 
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(60vmax 60vmax at 12% 16%, var(--accent-soft), transparent 62%),
+      radial-gradient(50vmax 50vmax at 88% 12%, var(--accent-2-soft), transparent 64%),
+      radial-gradient(65vmax 65vmax at 80% 88%, var(--accent-3-soft), transparent 66%),
+      radial-gradient(45vmax 45vmax at 26% 84%, var(--accent-soft), transparent 62%);
+  }
+
   h1,
   h2,
   h3,

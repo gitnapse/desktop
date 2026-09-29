@@ -665,4 +665,76 @@
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
   }
+
+  .markdown img {
+    max-inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-sm);
+    vertical-align: middle;
+  }
+
+  .markdown figure {
+    margin-block: var(--space-md);
+  }
+
+  .markdown figcaption {
+    color: var(--ink-muted);
+    font-size: var(--caption);
+    text-align: center;
+  }
+
+  .markdown details {
+    margin-block: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+
+  .markdown summary {
+    cursor: pointer;
+    color: var(--ink-strong);
+  }
+
+  .markdown kbd {
+    font-family: var(--font-data);
+    font-size: 0.85em;
+    padding: 0 var(--space-xs);
+    border: var(--border-width) solid var(--line-visible);
+    border-radius: var(--radius-xs);
+    background: var(--surface-raised);
+  }
+
+  .markdown mark {
+    background: var(--status-warn-subtle);
+    color: var(--ink-strong);
+  }
+
+  .markdown sub,
+  .markdown sup {
+    font-size: 0.72em;
+  }
+
+  .markdown dl {
+    margin-block: var(--space-md);
+  }
+
+  .markdown dt {
+    color: var(--ink-strong);
+  }
+
+  .markdown dd {
+    margin-inline-start: var(--space-lg);
+    color: var(--ink-muted);
+  }
+
+  .markdown li:has(> input[type="checkbox"]) {
+    list-style: none;
+    margin-inline-start: calc(-1 * var(--space-md));
+  }
+
+  .markdown input[type="checkbox"] {
+    margin-inline-end: var(--space-xs);
+    vertical-align: middle;
+    accent-color: var(--accent);
+  }
 }

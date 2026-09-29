@@ -1,0 +1,100 @@
+@layer features {
+  .themepicker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .themepicker__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .themegrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .themecard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    inline-size: 100%;
+    padding: var(--space-xs);
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+
+  .themecard:hover:not(:disabled) {
+    border-color: var(--line-visible);
+  }
+
+  .themecard[data-selected="true"] {
+    border-color: var(--control-line);
+  }
+
+  .themecard:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .themecard__preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    block-size: 44px;
+    padding-inline: var(--space-sm);
+    border: var(--border-width) solid rgb(255 255 255 / 0.08);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .themecard__sample {
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .themecard__name {
+    font-family: var(--font-label);
+    font-size: var(--label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .themecard__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 var(--space-2xs) var(--space-2xs);
+  }
+
+  .themecard__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--ink);
+    font-size: var(--body-sm);
+  }
+
+  .themecard__desc {
+    color: var(--ink-muted);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}

@@ -27,11 +27,16 @@ function NewRepoDialog({ open, onClose }: { open: boolean; onClose: () => void }
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const create = useMutation({
     mutationFn: () => bridge.createRepo(name.trim(), description.trim() || undefined, isPrivate),
-    onSuccess: () => {
+    onSuccess: (repo) => {
       void queryClient.invalidateQueries({ queryKey: ["user-repos"] });
+      void queryClient.invalidateQueries({ queryKey: ["starred-repos"] });
+      void queryClient.invalidateQueries({ queryKey: ["search-repos"] });
+      onClose();
+      navigate(repoPath(repo));
     },
   });
 

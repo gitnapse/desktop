@@ -58,7 +58,8 @@ pub async fn server_stop(state: State<'_, AppState>) -> Result<ServerStatus, Str
 #[tauri::command]
 pub async fn api_auth_status(state: State<'_, AppState>) -> Result<AuthStatusDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .auth_status()
         .await
         .map_err(|error| error.to_string())
@@ -68,7 +69,8 @@ pub async fn api_auth_status(state: State<'_, AppState>) -> Result<AuthStatusDto
 #[tauri::command]
 pub async fn api_set_token(state: State<'_, AppState>, token: String) -> Result<(), String> {
     state
-        .api()?
+        .client()
+        .await?
         .set_token(&token)
         .await
         .map_err(|error| error.to_string())
@@ -78,7 +80,8 @@ pub async fn api_set_token(state: State<'_, AppState>, token: String) -> Result<
 #[tauri::command]
 pub async fn api_clear_token(state: State<'_, AppState>) -> Result<(), String> {
     state
-        .api()?
+        .client()
+        .await?
         .clear_token()
         .await
         .map_err(|error| error.to_string())
@@ -89,7 +92,12 @@ pub async fn api_clear_token(state: State<'_, AppState>) -> Result<(), String> {
 /// Authenticated login.
 #[tauri::command]
 pub async fn api_user(state: State<'_, AppState>) -> Result<UserDto, String> {
-    state.api()?.user().await.map_err(|error| error.to_string())
+    state
+        .client()
+        .await?
+        .user()
+        .await
+        .map_err(|error| error.to_string())
 }
 
 /// Public profile of a GitHub user.
@@ -99,7 +107,8 @@ pub async fn user_profile(
     login: String,
 ) -> Result<UserProfileDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .user_profile(&login)
         .await
         .map_err(|error| error.to_string())
@@ -115,7 +124,8 @@ pub async fn user_repos(
     per_page: Option<u8>,
 ) -> Result<Vec<RepoDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .user_repos(&login, sort.as_deref(), page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -129,7 +139,8 @@ pub async fn starred_repos(
     per_page: Option<u8>,
 ) -> Result<Vec<RepoDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .starred_repos(page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -139,7 +150,8 @@ pub async fn starred_repos(
 #[tauri::command]
 pub async fn rate_limit(state: State<'_, AppState>) -> Result<RateLimitDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .rate_limit()
         .await
         .map_err(|error| error.to_string())
@@ -154,7 +166,8 @@ pub async fn user_events(
     per_page: Option<u8>,
 ) -> Result<Vec<EventDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .user_events(&login, page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -168,7 +181,8 @@ pub async fn notifications(
     per_page: Option<u8>,
 ) -> Result<Vec<NotificationDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .notifications(page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -178,7 +192,8 @@ pub async fn notifications(
 #[tauri::command]
 pub async fn notification_mark_read(state: State<'_, AppState>, id: String) -> Result<(), String> {
     state
-        .api()?
+        .client()
+        .await?
         .notification_mark_read(&id)
         .await
         .map_err(|error| error.to_string())
@@ -195,7 +210,8 @@ pub async fn search_repos(
     per_page: Option<u8>,
 ) -> Result<Vec<RepoDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .search(&query, page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -210,7 +226,8 @@ pub async fn search_users(
     per_page: Option<u8>,
 ) -> Result<Vec<UserProfileDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .search_users(&query, page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -225,7 +242,8 @@ pub async fn search_code(
     per_page: Option<u8>,
 ) -> Result<Vec<CodeSearchResultDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .search_code(&query, page, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -237,7 +255,8 @@ pub async fn search_code(
 #[tauri::command]
 pub async fn repo_detail(state: State<'_, AppState>, repo: String) -> Result<RepoDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .repo(&repo)
         .await
         .map_err(|error| error.to_string())
@@ -247,7 +266,8 @@ pub async fn repo_detail(state: State<'_, AppState>, repo: String) -> Result<Rep
 #[tauri::command]
 pub async fn branches(state: State<'_, AppState>, repo: String) -> Result<Vec<String>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .branches(&repo)
         .await
         .map_err(|error| error.to_string())
@@ -261,7 +281,8 @@ pub async fn repo_tree(
     git_ref: Option<String>,
 ) -> Result<Vec<TreeNodeDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .tree(&repo, git_ref.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -276,7 +297,8 @@ pub async fn file_content(
     git_ref: Option<String>,
 ) -> Result<ContentDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .content(&repo, &path, git_ref.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -291,7 +313,8 @@ pub async fn recent_commits(
     per_page: Option<u8>,
 ) -> Result<Vec<CommitDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .recent_commits(&repo, git_ref.as_deref(), per_page)
         .await
         .map_err(|error| error.to_string())
@@ -306,7 +329,8 @@ pub async fn compare_branches(
     head: String,
 ) -> Result<CompareDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .compare(&repo, &base, &head)
         .await
         .map_err(|error| error.to_string())
@@ -319,7 +343,8 @@ pub async fn repo_languages(
     repo: String,
 ) -> Result<Vec<LanguageDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .languages(&repo)
         .await
         .map_err(|error| error.to_string())
@@ -333,7 +358,8 @@ pub async fn repo_contributors(
     per_page: Option<u8>,
 ) -> Result<Vec<ContributorDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .contributors(&repo, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -349,7 +375,8 @@ pub async fn issues(
     state: Option<String>,
     per_page: Option<u8>,
 ) -> Result<Vec<IssueDto>, String> {
-    app.api()?
+    app.client()
+        .await?
         .issues(&repo, state.as_deref(), per_page)
         .await
         .map_err(|error| error.to_string())
@@ -363,7 +390,8 @@ pub async fn issue(
     number: u64,
 ) -> Result<IssueDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .issue_detail(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -377,7 +405,8 @@ pub async fn issue_comments(
     number: u64,
 ) -> Result<Vec<IssueCommentDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .issue_comments(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -392,7 +421,8 @@ pub async fn comment_issue(
     body: String,
 ) -> Result<IssueCommentDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .create_issue_comment(&repo, number, &body)
         .await
         .map_err(|error| error.to_string())
@@ -407,7 +437,8 @@ pub async fn create_issue(
     body: Option<String>,
 ) -> Result<IssueDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .create_issue(&repo, &title, body.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -421,7 +452,8 @@ pub async fn close_issue(
     number: u64,
 ) -> Result<IssueDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .close_issue(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -435,7 +467,8 @@ pub async fn reopen_issue(
     number: u64,
 ) -> Result<IssueDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .reopen_issue(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -451,7 +484,8 @@ pub async fn pull_requests(
     state: Option<String>,
     per_page: Option<u8>,
 ) -> Result<Vec<PrSummaryDto>, String> {
-    app.api()?
+    app.client()
+        .await?
         .pull_requests(&repo, state.as_deref(), per_page)
         .await
         .map_err(|error| error.to_string())
@@ -465,7 +499,8 @@ pub async fn pull_request(
     number: u64,
 ) -> Result<PrDetailDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pull_request(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -479,7 +514,8 @@ pub async fn pr_files(
     number: u64,
 ) -> Result<Vec<DiffFileDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pr_files(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -493,7 +529,8 @@ pub async fn pull_request_commits(
     number: u64,
 ) -> Result<Vec<CommitDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pull_request_commits(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -507,7 +544,8 @@ pub async fn pull_request_reviews(
     number: u64,
 ) -> Result<Vec<PrReviewDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pull_request_reviews(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -521,7 +559,8 @@ pub async fn pull_request_comments(
     number: u64,
 ) -> Result<Vec<PrCommentDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pull_request_comments(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -535,7 +574,8 @@ pub async fn pr_conversation(
     number: u64,
 ) -> Result<Vec<IssueCommentDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .pr_conversation(&repo, number)
         .await
         .map_err(|error| error.to_string())
@@ -552,7 +592,8 @@ pub async fn create_pull_request(
     body: Option<String>,
 ) -> Result<PrDetailDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .create_pull_request(&repo, &title, &head, &base, body.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -568,7 +609,8 @@ pub async fn merge_pull_request(
     method: Option<String>,
 ) -> Result<MergeResultDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .merge_pull_request(&repo, number, commit_title.as_deref(), method.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -582,7 +624,8 @@ pub async fn update_pull_request(
     number: u64,
     state: String,
 ) -> Result<(), String> {
-    app.api()?
+    app.client()
+        .await?
         .update_pull_request(&repo, number, &state)
         .await
         .map_err(|error| error.to_string())
@@ -598,7 +641,8 @@ pub async fn review_pull_request(
     body: Option<String>,
 ) -> Result<(), String> {
     state
-        .api()?
+        .client()
+        .await?
         .review_pull_request(&repo, number, &event, body.as_deref())
         .await
         .map_err(|error| error.to_string())
@@ -613,7 +657,8 @@ pub async fn comment_pull_request(
     body: String,
 ) -> Result<(), String> {
     state
-        .api()?
+        .client()
+        .await?
         .comment_pull_request(&repo, number, &body)
         .await
         .map_err(|error| error.to_string())
@@ -629,7 +674,8 @@ pub async fn releases(
     per_page: Option<u8>,
 ) -> Result<Vec<ReleaseDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .releases(&repo, per_page)
         .await
         .map_err(|error| error.to_string())
@@ -646,7 +692,8 @@ pub async fn create_release(
     prerelease: Option<bool>,
 ) -> Result<ReleaseDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .create_release(
             &repo,
             &tag_name,
@@ -666,7 +713,8 @@ pub async fn check_runs(
     git_ref: String,
 ) -> Result<Vec<CheckRunDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .check_runs(&repo, &git_ref)
         .await
         .map_err(|error| error.to_string())
@@ -681,7 +729,8 @@ pub async fn workflow_runs(
     per_page: Option<u8>,
 ) -> Result<Vec<WorkflowRunDto>, String> {
     state
-        .api()?
+        .client()
+        .await?
         .workflow_runs(&repo, branch.as_deref(), per_page)
         .await
         .map_err(|error| error.to_string())
@@ -696,7 +745,8 @@ pub async fn create_repo(
     private: Option<bool>,
 ) -> Result<RepoDto, String> {
     state
-        .api()?
+        .client()
+        .await?
         .create_repo(&name, description.as_deref(), private.unwrap_or(false))
         .await
         .map_err(|error| error.to_string())

@@ -112,6 +112,7 @@ export function RepoHeader({ repo, fullName, refName, onRefChange }: RepoHeaderP
       <div className="statgrid repohead__stats">
         <StatTile label="Stars" value={formatCount(repo.stargazers_count)} />
         <StatTile label="Forks" value={formatCount(repo.forks_count ?? 0)} />
+        <StatTile label="Watchers" value={formatCount(repo.watchers_count ?? 0)} />
         <StatTile
           label="Open issues"
           value={String(repo.open_issues_count ?? 0)}

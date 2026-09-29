@@ -8,6 +8,7 @@ import RepoPage from "../../../app/pages/RepoPage";
 import LocalPage from "../../../app/pages/LocalPage";
 import OverviewTab from "../../../app/pages/repo/OverviewTab";
 import CodeTab from "../../../app/pages/repo/CodeTab";
+import GraphTab from "../../../app/pages/repo/GraphTab";
 import CommitsTab from "../../../app/pages/repo/CommitsTab";
 import BranchesTab from "../../../app/pages/repo/BranchesTab";
 import CompareTab from "../../../app/pages/repo/CompareTab";
@@ -48,6 +49,9 @@ async function seedTab(client: QueryClient, tab: string) {
       await mockInvoke("file_content", { repo: fullName, path: "README.md" }),
     );
   }
+  if (tab === "graph") {
+    client.setQueryData(["repo-tree", fullName, "main"], await mockInvoke("repo_tree", { repo: fullName }));
+  }
   if (tab === "commits") {
     client.setQueryData(["repo-commits", fullName, null, 30], await mockInvoke("recent_commits", { repo: fullName, perPage: 30 }));
   }
@@ -82,6 +86,7 @@ async function seedTab(client: QueryClient, tab: string) {
 const tabs: Array<[string, ComponentType, string]> = [
   ["overview", OverviewTab, "Rust"],
   ["code", CodeTab, "README.md"],
+  ["graph", GraphTab, "NODES"],
   ["commits", CommitsTab, "Add glass token contract"],
   ["branches", BranchesTab, "feat/glass-shell"],
   ["compare", CompareTab, "src/styles/tokens.css"],

@@ -51,6 +51,25 @@ impl AppState {
             .get()
             .ok_or_else(|| "API client unavailable".to_string())
     }
+
+    /// Ensures the `gitnapse-server` sidecar is healthy, then hands back a clone
+    /// of the shared client. Every remote command goes through this, so the app
+    /// transparently manages its own server instead of assuming one is running.
+    pub async fn client(&self) -> Result<ApiClient, String> {
+        let server = self.server();
+        tauri::async_runtime::spawn_blocking(move || {
+            let mut manager = server
+                .lock()
+                .map_err(|_| "server lock poisoned".to_string())?;
+            manager
+                .ensure_running()
+                .map_err(|error| error.to_string())?;
+            Ok::<(), String>(())
+        })
+        .await
+        .map_err(|error| format!("blocking task failed: {error}"))??;
+        Ok(self.api()?.clone())
+    }
 }
 
 impl Default for AppState {

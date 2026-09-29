@@ -1,7 +1,10 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import { openExternal } from "../lib/bridge";
 
-type MarkdownRenderer = (source: string) => string;
+type MarkdownRenderer = (
+  source: string,
+  context?: { repo?: string; ref?: string | null; path?: string | null },
+) => string;
 
 let rendererPromise: Promise<MarkdownRenderer> | null = null;
 
@@ -13,9 +16,13 @@ function loadRenderer(): Promise<MarkdownRenderer> {
 export interface MarkdownProps {
   source: string;
   className?: string;
+  /** `owner/name`, so relative links and images resolve like on GitHub. */
+  repo?: string;
+  gitRef?: string | null;
+  basePath?: string | null;
 }
 
-export function Markdown({ source, className }: MarkdownProps) {
+export function Markdown({ source, className, repo, gitRef, basePath }: MarkdownProps) {
   const [html, setHtml] = useState("");
   const [error, setError] = useState(false);
 
@@ -24,7 +31,7 @@ export function Markdown({ source, className }: MarkdownProps) {
     loadRenderer()
       .then((render) => {
         if (!cancelled) {
-          setHtml(render(source));
+          setHtml(render(source, repo ? { repo, ref: gitRef ?? null, path: basePath ?? null } : undefined));
         }
       })
       .catch(() => {
@@ -35,7 +42,7 @@ export function Markdown({ source, className }: MarkdownProps) {
     return () => {
       cancelled = true;
     };
-  }, [source]);
+  }, [source, repo, gitRef, basePath]);
 
   if (error) {
     return <p className="statusline">{`[ERROR: MARKDOWN RENDERER]`}</p>;

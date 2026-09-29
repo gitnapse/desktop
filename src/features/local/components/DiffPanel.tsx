@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
-import { Button, Input } from "../../../ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, RefreshCw, RotateCcw } from "lucide-react";
+import { Button, Dropdown, DropdownItem, Input, StatusLine, iconSize, iconStroke } from "../../../ui";
 import * as bridge from "../../../lib/bridge";
 import type { GitDiffMode } from "../../../lib/types";
 import { DiffView } from "../../repo/components/DiffView";
@@ -32,10 +32,20 @@ function toMode(target: DiffTarget): GitDiffMode {
 export function DiffPanel({ cwd, target, onTargetChange }: DiffPanelProps) {
   const [from, setFrom] = useState(target.from ?? "");
   const [to, setTo] = useState(target.to ?? "");
+  const queryClient = useQueryClient();
 
   const diff = useQuery({
     queryKey: localKeys.diff(cwd, target),
     queryFn: () => bridge.gitDiff(cwd, toMode(target)),
+  });
+
+  const reset = useMutation({
+    mutationFn: (hard: boolean) => bridge.gitReset(cwd, "HEAD", hard),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["git-status"] });
+      void queryClient.invalidateQueries({ queryKey: ["git-diff"] });
+      void queryClient.invalidateQueries({ queryKey: ["git-log"] });
+    },
   });
 
   return (
@@ -43,14 +53,32 @@ export function DiffPanel({ cwd, target, onTargetChange }: DiffPanelProps) {
       title="Diff"
       label={diffTargetLabel(target)}
       actions={
-        <Button
-          variant="technical"
-          icon={RefreshCw}
-          onClick={() => void diff.refetch()}
-          disabled={diff.isFetching}
-        >
-          Refresh
-        </Button>
+        <>
+          <Dropdown
+            label="Reset working tree"
+            align="end"
+            trigger={
+              <>
+                <RotateCcw size={iconSize.md} strokeWidth={iconStroke} aria-hidden="true" />
+                <span className="t-label">Reset</span>
+                <ChevronDown size={iconSize.sm} strokeWidth={iconStroke} aria-hidden="true" />
+              </>
+            }
+          >
+            <DropdownItem onSelect={() => reset.mutate(false)}>Unstage all</DropdownItem>
+            <DropdownItem onSelect={() => reset.mutate(true)}>
+              Discard all changes
+            </DropdownItem>
+          </Dropdown>
+          <Button
+            variant="technical"
+            icon={RefreshCw}
+            onClick={() => void diff.refetch()}
+            disabled={diff.isFetching}
+          >
+            Refresh
+          </Button>
+        </>
       }
     >
       <div className="difftoolbar">
@@ -101,6 +129,9 @@ export function DiffPanel({ cwd, target, onTargetChange }: DiffPanelProps) {
           </Button>
         </div>
       </div>
+      {reset.isPending ? <StatusLine kind="loading" message="resetting" /> : null}
+      {reset.isError ? <StatusLine kind="error" message={reset.error.message} /> : null}
+      {reset.isSuccess ? <StatusLine kind="saved" message="WORKING TREE RESET" /> : null}
       <QueryFeedback
         pending={diff.isPending}
         error={diff.error}
