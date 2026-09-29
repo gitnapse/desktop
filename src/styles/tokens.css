@@ -1,0 +1,248 @@
+@layer tokens, base, glass, components, app;
+
+@layer tokens {
+  :root {
+    color-scheme: dark;
+
+    --alpha-04: 0.04;
+    --alpha-06: 0.06;
+    --alpha-08: 0.08;
+    --alpha-10: 0.1;
+    --alpha-12: 0.12;
+    --alpha-16: 0.16;
+    --alpha-20: 0.2;
+    --alpha-28: 0.28;
+    --alpha-35: 0.35;
+    --alpha-45: 0.45;
+    --alpha-55: 0.55;
+    --alpha-62: 0.62;
+    --alpha-66: 0.66;
+    --alpha-74: 0.74;
+    --alpha-78: 0.78;
+    --alpha-86: 0.86;
+    --alpha-92: 0.92;
+    --alpha-95: 0.95;
+
+    --blur-08: 8px;
+    --blur-12: 12px;
+    --blur-16: 16px;
+    --blur-24: 24px;
+    --blur-32: 32px;
+    --blur-40: 40px;
+
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    --space-2xs: 2px;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    --space-3xl: 64px;
+
+    --border-width: 1px;
+    --border-width-accent: 2px;
+
+    --font-ui: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+    --font-display: "Doto", "Space Mono", ui-monospace, monospace;
+    --font-data: "Space Mono", "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+    --font-label: var(--font-data);
+
+    --weight-light: 300;
+    --weight-regular: 400;
+    --weight-medium: 500;
+
+    --display-xl: 72px;
+    --display-lg: 48px;
+    --display-md: 36px;
+    --heading: 24px;
+    --subheading: 18px;
+    --body: 16px;
+    --body-sm: 14px;
+    --caption: 12px;
+    --label: 11px;
+
+    --leading-display: 1;
+    --leading-tight: 1.15;
+    --leading-normal: 1.5;
+    --leading-label: 1.2;
+
+    --tracking-display: -0.03em;
+    --tracking-heading: -0.01em;
+    --tracking-caption: 0.04em;
+    --tracking-label: 0.08em;
+
+    --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --ease-theme: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-fast: 150ms;
+    --dur-med: 240ms;
+    --dur-slow: 320ms;
+
+    --layout-sidenav-width: 232px;
+    --layout-topbar-height: 56px;
+    --layout-content-max: 1200px;
+
+    --z-sidenav: 20;
+    --z-topbar: 30;
+    --z-dropdown: 60;
+    --z-modal: 70;
+    --z-palette: 80;
+
+    --icon-sm: 14px;
+    --icon-md: 16px;
+    --icon-lg: 20px;
+
+    --status-ok: #5db26e;
+    --status-warn: #d4a843;
+    --status-err: #ef6a72;
+    --status-info: #6ea8f7;
+    --status-ok-subtle: rgb(93 178 110 / 0.1);
+    --status-warn-subtle: rgb(212 168 67 / 0.1);
+    --status-err-subtle: rgb(239 106 114 / 0.1);
+    --status-info-subtle: rgb(110 168 247 / 0.1);
+
+    --bg: #000000;
+    --surface: #111111;
+    --surface-raised: #1a1a1a;
+    --line: #222222;
+    --line-visible: #333333;
+    --control-line: #666666;
+    --ink-strong: #ffffff;
+    --ink: #e8e8e8;
+    --ink-muted: #999999;
+    --ink-faint: #666666;
+    --focus-ring: #ffffff;
+    --scrim: rgb(0 0 0 / 0.62);
+    --texture-ink: rgb(255 255 255 / 0.035);
+    --selection-bg: color-mix(in oklab, var(--status-info) 60%, #000000 20%);
+    --selection-ink: #ffffff;
+    --overlay-surface: rgb(17 17 17 / 0.82);
+
+    --glass-tint-rgb: 17 17 17;
+    --glass-tint-alpha-thin: var(--alpha-55);
+    --glass-tint-alpha-regular: var(--alpha-66);
+    --glass-tint-alpha-thick: var(--alpha-78);
+    --glass-saturate-thin: 150%;
+    --glass-saturate-regular: 170%;
+    --glass-saturate-thick: 185%;
+    --glass-brightness: 1.04;
+    --glass-edge-thin: rgb(255 255 255 / 0.1);
+    --glass-edge-regular: rgb(255 255 255 / 0.14);
+    --glass-edge-thick: rgb(255 255 255 / 0.18);
+    --glass-highlight: rgb(255 255 255 / 0.16);
+    --glass-shadow-thin: 0 1px 2px rgb(0 0 0 / 0.4);
+    --glass-shadow-regular: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 28px rgb(0 0 0 / 0.5);
+    --glass-shadow-thick: 0 2px 4px rgb(0 0 0 / 0.5), 0 24px 64px rgb(0 0 0 / 0.6);
+    --glass-text: var(--ink);
+    --glass-text-muted: var(--ink-muted);
+    --glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+
+    --glass-blur-thin: var(--blur-12);
+    --glass-blur-regular: var(--blur-24);
+    --glass-blur-thick: var(--blur-32);
+    --glass-radius-thin: var(--radius-md);
+    --glass-radius-regular: var(--radius-md);
+    --glass-radius-thick: var(--radius-lg);
+    --glass-noise-opacity-thin: 0.02;
+    --glass-noise-opacity-regular: 0.03;
+    --glass-noise-opacity-thick: 0.04;
+    --glass-tint-thin: rgb(var(--glass-tint-rgb) / var(--glass-tint-alpha-thin));
+    --glass-tint-regular: rgb(var(--glass-tint-rgb) / var(--glass-tint-alpha-regular));
+    --glass-tint-thick: rgb(var(--glass-tint-rgb) / var(--glass-tint-alpha-thick));
+
+    --glass-app-blur: var(--glass-blur-regular);
+    --glass-app-tint: var(--glass-tint-regular);
+    --glass-app-edge: var(--glass-edge-regular);
+    --glass-app-saturate: var(--glass-saturate-regular);
+    --glass-app-shadow: var(--glass-shadow-regular);
+    --glass-app-radius: var(--glass-radius-regular);
+    --glass-app-noise-opacity: var(--glass-noise-opacity-regular);
+    --glass-transition: opacity var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+
+    --status-ok: #2e6b3c;
+    --status-warn: #7a5c0f;
+    --status-err: #b3232a;
+    --status-info: #0057c2;
+    --status-ok-subtle: rgb(46 107 60 / 0.1);
+    --status-warn-subtle: rgb(122 92 15 / 0.1);
+    --status-err-subtle: rgb(179 35 42 / 0.1);
+    --status-info-subtle: rgb(0 87 194 / 0.1);
+
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --surface-raised: #efece5;
+    --line: #e6e1d7;
+    --line-visible: #cfc9bd;
+    --control-line: #8a857c;
+    --ink-strong: #000000;
+    --ink: #1a1a1a;
+    --ink-muted: #635f58;
+    --ink-faint: #8a857c;
+    --focus-ring: #1a1a1a;
+    --scrim: rgb(26 24 21 / 0.42);
+    --texture-ink: rgb(26 24 21 / 0.05);
+    --selection-bg: color-mix(in oklab, var(--status-info) 35%, #ffffff 20%);
+    --selection-ink: #0b0b0b;
+    --overlay-surface: rgb(255 255 255 / 0.86);
+
+    --glass-tint-rgb: 255 255 255;
+    --glass-tint-alpha-thin: var(--alpha-62);
+    --glass-tint-alpha-regular: var(--alpha-74);
+    --glass-tint-alpha-thick: var(--alpha-86);
+    --glass-saturate-thin: 130%;
+    --glass-saturate-regular: 140%;
+    --glass-saturate-thick: 150%;
+    --glass-brightness: 1;
+    --glass-edge-thin: rgb(255 255 255 / 0.55);
+    --glass-edge-regular: rgb(255 255 255 / 0.65);
+    --glass-edge-thick: rgb(255 255 255 / 0.75);
+    --glass-highlight: rgb(255 255 255 / 0.8);
+    --glass-shadow-thin: 0 1px 2px rgb(26 24 21 / 0.1);
+    --glass-shadow-regular: 0 1px 2px rgb(26 24 21 / 0.1), 0 8px 28px rgb(26 24 21 / 0.14);
+    --glass-shadow-thick: 0 2px 4px rgb(26 24 21 / 0.12), 0 24px 64px rgb(26 24 21 / 0.22);
+  }
+
+  :root[data-glass="thin"] {
+    --glass-app-blur: var(--glass-blur-thin);
+    --glass-app-tint: var(--glass-tint-thin);
+    --glass-app-edge: var(--glass-edge-thin);
+    --glass-app-saturate: var(--glass-saturate-thin);
+    --glass-app-shadow: var(--glass-shadow-thin);
+    --glass-app-radius: var(--glass-radius-thin);
+    --glass-app-noise-opacity: var(--glass-noise-opacity-thin);
+  }
+
+  :root[data-glass="regular"] {
+    --glass-app-blur: var(--glass-blur-regular);
+    --glass-app-tint: var(--glass-tint-regular);
+    --glass-app-edge: var(--glass-edge-regular);
+    --glass-app-saturate: var(--glass-saturate-regular);
+    --glass-app-shadow: var(--glass-shadow-regular);
+    --glass-app-radius: var(--glass-radius-regular);
+    --glass-app-noise-opacity: var(--glass-noise-opacity-regular);
+  }
+
+  :root[data-glass="thick"] {
+    --glass-app-blur: var(--glass-blur-thick);
+    --glass-app-tint: var(--glass-tint-thick);
+    --glass-app-edge: var(--glass-edge-thick);
+    --glass-app-saturate: var(--glass-saturate-thick);
+    --glass-app-shadow: var(--glass-shadow-thick);
+    --glass-app-radius: var(--glass-radius-thick);
+    --glass-app-noise-opacity: var(--glass-noise-opacity-thick);
+  }
+}

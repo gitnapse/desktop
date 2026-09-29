@@ -1,11 +1,21 @@
-//! Linux platform backend (xdg-open based).
+//! Linux platform backend (`xdg-open`).
 
-/// Open a folder in the default file manager.
-#[tauri::command]
-pub fn open_in_file_manager(path: String) -> Result<(), String> {
-    std::process::Command::new("xdg-open")
-        .arg(&path)
+use std::process::Command;
+
+/// Opens a folder in the default file manager.
+pub fn open_in_file_manager(path: &str) -> Result<(), String> {
+    Command::new("xdg-open")
+        .arg(path)
         .status()
         .map(|_| ())
-        .map_err(|e| format!("cannot open folder with xdg-open: {e}"))
+        .map_err(|error| format!("cannot open folder with xdg-open: {error}"))
+}
+
+/// Opens a URL in the default browser.
+pub fn open_external(url: &str) -> Result<(), String> {
+    Command::new("xdg-open")
+        .arg(url)
+        .status()
+        .map(|_| ())
+        .map_err(|error| format!("cannot open URL with xdg-open: {error}"))
 }

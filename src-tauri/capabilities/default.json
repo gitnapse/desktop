@@ -1,6 +1,6 @@
 {
   "identifier": "default",
-  "description": "Capabilities for the main GitNapse Desktop window",
+  "description": "Capabilities for the main GitNapse window: custom commands, events (clone progress) and the dialog plugin for folder picking.",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default"]
+  "permissions": ["core:default", "core:event:default", "dialog:default"]
 }

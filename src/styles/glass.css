@@ -1,0 +1,145 @@
+@layer glass {
+  .glass {
+    --glass-blur: var(--glass-app-blur);
+    --glass-tint: var(--glass-app-tint);
+    --glass-edge: var(--glass-app-edge);
+    --glass-saturate: var(--glass-app-saturate);
+    --glass-shadow: var(--glass-app-shadow);
+    --glass-radius: var(--glass-app-radius);
+    --glass-noise-opacity: var(--glass-app-noise-opacity);
+
+    position: relative;
+    isolation: isolate;
+    border-radius: var(--glass-radius);
+    border: var(--border-width) solid var(--glass-edge);
+    background: var(--glass-tint);
+    color: var(--glass-text);
+    box-shadow: inset 0 var(--border-width) 0 var(--glass-highlight), var(--glass-shadow);
+  }
+
+  .glass--thin {
+    --glass-blur: var(--glass-blur-thin);
+    --glass-tint: var(--glass-tint-thin);
+    --glass-edge: var(--glass-edge-thin);
+    --glass-saturate: var(--glass-saturate-thin);
+    --glass-shadow: var(--glass-shadow-thin);
+    --glass-radius: var(--glass-radius-thin);
+    --glass-noise-opacity: var(--glass-noise-opacity-thin);
+  }
+
+  .glass--regular {
+    --glass-blur: var(--glass-blur-regular);
+    --glass-tint: var(--glass-tint-regular);
+    --glass-edge: var(--glass-edge-regular);
+    --glass-saturate: var(--glass-saturate-regular);
+    --glass-shadow: var(--glass-shadow-regular);
+    --glass-radius: var(--glass-radius-regular);
+    --glass-noise-opacity: var(--glass-noise-opacity-regular);
+  }
+
+  .glass--thick {
+    --glass-blur: var(--glass-blur-thick);
+    --glass-tint: var(--glass-tint-thick);
+    --glass-edge: var(--glass-edge-thick);
+    --glass-saturate: var(--glass-saturate-thick);
+    --glass-shadow: var(--glass-shadow-thick);
+    --glass-radius: var(--glass-radius-thick);
+    --glass-noise-opacity: var(--glass-noise-opacity-thick);
+  }
+
+  .glass--scrim {
+    background: color-mix(in oklab, var(--glass-tint) 78%, var(--surface) 22%);
+  }
+
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--glass-noise-opacity);
+    background-image: var(--glass-noise);
+    mix-blend-mode: overlay;
+    z-index: -1;
+  }
+
+  .glass-flat {
+    border-radius: var(--glass-app-radius);
+    border: var(--border-width) solid var(--line);
+    background: color-mix(in oklab, var(--surface) 82%, transparent);
+    color: var(--glass-text);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+        brightness(var(--glass-brightness));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+        brightness(var(--glass-brightness));
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass::after {
+      display: none;
+    }
+  }
+
+  :root[data-transparency="reduce"] .glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-transparency="reduce"] .glass::after {
+    display: none;
+  }
+
+  @media (prefers-contrast: more) {
+    .glass {
+      background: var(--surface);
+      border-color: var(--ink-faint);
+      box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass::after {
+      display: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .glass,
+    .glass-flat {
+      background: Canvas;
+      color: CanvasText;
+      border: var(--border-width) solid ButtonText;
+      box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass::after {
+      display: none;
+    }
+  }
+
+  @media print {
+    .glass {
+      background: #ffffff;
+      color: #000000;
+      box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass::after {
+      display: none;
+    }
+  }
+}
